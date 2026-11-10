@@ -48,11 +48,13 @@ export default function ListField({
           <details className="randomControls">
             <summary>Random</summary>
             <div className="rc-content">
-              <select value={pick} onChange={(e) => setPick(e.target.value)} aria-label={`${label} random category`}>
-                {randomOptions.map((o) => (
-                  <option key={o.value} value={o.value}>{o.label}</option>
-                ))}
-              </select>
+              {randomOptions.length > 1 && (
+                <select value={pick} onChange={(e) => setPick(e.target.value)} aria-label={`${label} random category`}>
+                  {randomOptions.map((o) => (
+                    <option key={o.value} value={o.value}>{o.label}</option>
+                  ))}
+                </select>
+              )}
               <button
                 type="button"
                 className="smallButton"

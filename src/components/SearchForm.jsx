@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
 import ListField from "./ListField.jsx";
-import { allSets } from "../utils/scryfall";
+import { allSets, catalog } from "../utils/scryfall";
 import { loadTags, searchTags, randomTag } from "../utils/tags";
 import {
-  TYPE_OPTIONS, RULES_OPTIONS, SET_OPTIONS, WATERMARK_OPTIONS,
-  ART_TAGS, FUNCTION_TAGS, typePool, rulesPool, setPool, watermarkPool,
+  TYPE_OPTIONS, RULES_OPTIONS, SET_OPTIONS,
+  ART_TAGS, FUNCTION_TAGS, typePool, rulesPool, setPool,
   allTypes, setItem,
 } from "../data/pools";
 
@@ -34,6 +34,7 @@ export default function SearchForm({ initial, onSearch, onRandomCard, onDraft })
   const [sort, setSort] = useState(initial.sort);
   const [typeNames, setTypeNames] = useState([]);
   const [sets, setSets] = useState([]);
+  const [watermarks, setWatermarks] = useState([]);
   const [artTags, setArtTags] = useState([]);
   const [functionTags, setFunctionTags] = useState([]);
 
@@ -41,6 +42,7 @@ export default function SearchForm({ initial, onSearch, onRandomCard, onDraft })
   useEffect(() => {
     allTypes().then(setTypeNames).catch(() => {});
     allSets().then(setSets).catch(() => {});
+    catalog("watermarks").then(setWatermarks).catch(() => {});
     loadTags("art").then(setArtTags);
     loadTags("function").then(setFunctionTags);
   }, []);
@@ -156,9 +158,10 @@ export default function SearchForm({ initial, onSearch, onRandomCard, onDraft })
 
       {field("watermark", {
         id: "watermarkInput", label: "Watermark:", placeholder: "Ex. Abzan, Desparked",
-        randomOptions: WATERMARK_OPTIONS,
-        suggest: (text) => watermarkPool("any").filter((w) => w.includes(text.toLowerCase())).map((w) => ({ label: w, value: w })),
-        onRandom: async (key) => pick(watermarkPool(key)),
+        randomOptions: [{ value: "any", label: "Any Watermark" }],
+        suggest: (text) =>
+          watermarks.filter((w) => w.includes(text.toLowerCase().trim())).map((w) => ({ label: w, value: w })),
+        onRandom: async () => pick(await catalog("watermarks")),
       })}
 
       {field("art", {

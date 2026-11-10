@@ -30,21 +30,14 @@ export const SET_OPTIONS = opts([
   ["core", "Core Set"], ["expansion", "Expansion"], ["supplemental", "Supplemental"],
   ["nonDCI", "Non-DCI Legal"], ["digital", "Digital Only"], ["extras", "Extras"], ["any", "Any Set"],
 ]);
-export const WATERMARK_OPTIONS = opts([
-  ["faction", "Faction"], ["cardInfo", "Card Info"], ["promo", "Promo"], ["crossover", "Crossover"], ["any", "Any Watermark"],
-]);
 
-// Starter lists: expand as you discover more watermarks/tags.
-const WATERMARKS = {
-  faction: ["abzan", "azorius", "boros", "dimir", "golgari", "gruul", "izzet", "jeskai", "mardu", "orzhov", "rakdos", "selesnya", "simic", "sultai", "temur", "silverquill", "prismari", "witherbloom", "lorehold", "quandrix"],
-  cardInfo: ["desparked", "planeswalker", "colorless"],
-  promo: ["planeswalker"],
-  crossover: ["universesbeyond"],
-};
 export const ART_TAGS = ["calamity-beast", "squirrel-horde", "dragon", "angel", "goblin-horde"];
 export const FUNCTION_TAGS = ["lifegain-matters", "cycle-m15-sliver", "ramp", "removal", "draw"];
 
 const flat = async (names) => (await Promise.all(names.map(catalog))).flat();
+
+// Watermark names come straight from Scryfall's catalog (cached after the first request)
+export const watermarkNames = () => catalog("watermarks");
 
 export const allTypes = async () => [
   ...SUPERTYPES,
@@ -83,5 +76,3 @@ export async function setPool(key) {
   return match.map(setItem);
 }
 
-export const watermarkPool = (key) =>
-  key === "any" ? Object.values(WATERMARKS).flat() : WATERMARKS[key] ?? [];
