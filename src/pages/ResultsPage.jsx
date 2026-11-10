@@ -5,6 +5,8 @@ import { sortHandler } from "../utils/sortHandler";
 import { buildQuery } from "../utils/buildQuery";
 import { paramsToState } from "../utils/searchParams";
 import { cardImage, cardPath } from "../utils/cards";
+import { SIZES, useCardSize } from "../utils/useCardSize";
+import SizeControl from "../components/SizeControl.jsx";
 
 const resultsCache = new Map(); // so "Back" from a card page doesn't re-run the search
 
@@ -14,6 +16,7 @@ export default function ResultsPage() {
   const [cards, setCards] = useState(() => resultsCache.get(key) ?? null);
   const [progress, setProgress] = useState("Searching…");
   const [error, setError] = useState("");
+  const [sizeKey, setSizeKey, size] = useCardSize();
 
   useEffect(() => {
     if (resultsCache.has(key)) {
@@ -52,6 +55,7 @@ export default function ResultsPage() {
       <div className="resultsBar">
         <Link className="buttonLink" to={{ pathname: "/", search: `?${key}` }}>Edit search</Link>
         {cards && <span>{cards.length} cards</span>}
+        {cards?.length > 0 && <SizeControl value={sizeKey} onChange={setSizeKey} sizes={SIZES} />}
       </div>
 
       {!cards && !error && <p className="loading-message">{progress}</p>}
@@ -59,11 +63,11 @@ export default function ResultsPage() {
       {cards?.length === 0 && <p className="errorMessage">No cards matched that search.</p>}
 
       {cards && (
-        <ul className="cardGrid">
+        <ul className="cardGrid" data-size={sizeKey} style={{ "--card-w": `${size.width}px` }}>
           {cards.map((card) => (
             <li key={card.id}>
               <Link to={cardPath(card)}>
-                <img src={cardImage(card)} alt={card.name} loading="lazy" />
+                <img src={cardImage(card, size.image)} alt={card.name} loading="lazy" />
               </Link>
             </li>
           ))}

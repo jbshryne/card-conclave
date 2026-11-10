@@ -3,6 +3,8 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import BackButton from "../components/BackButton.jsx";
 import { searchAll } from "../utils/scryfall";
 import { cardImage } from "../utils/cards";
+import { SIZES, useCardSize } from "../utils/useCardSize";
+import SizeControl from "../components/SizeControl.jsx";
 
 const cache = new Map();
 
@@ -13,6 +15,7 @@ export default function BasicLandsPage() {
   const key = `${set}/${name}`;
   const [cards, setCards] = useState(null);
   const [error, setError] = useState("");
+  const [sizeKey, setSizeKey, size] = useCardSize();
 
   useEffect(() => {
     let cancelled = false;
@@ -56,6 +59,7 @@ export default function BasicLandsPage() {
           {name} {setName ? `— ${setName} (${set.toUpperCase()})` : ""}
           {cards ? ` · ${cards.length} versions` : ""}
         </span>
+        {cards?.length > 0 && <SizeControl value={sizeKey} onChange={setSizeKey} sizes={SIZES} />}
       </div>
 
       {!cards && !error && <p className="loading-message">Loading…</p>}
@@ -63,11 +67,11 @@ export default function BasicLandsPage() {
       {cards?.length === 0 && <p className="errorMessage">No versions found.</p>}
 
       {cards && (
-        <ul className="cardGrid">
+        <ul className="cardGrid" data-size={sizeKey} style={{ "--card-w": `${size.width}px` }}>
           {cards.map((card) => (
             <li key={card.id}>
               <Link to={`/card/${card.id}`}>
-                <img src={cardImage(card)} alt={`${card.name} #${card.collector_number}`} loading="lazy" />
+                <img src={cardImage(card, size.image)} alt={`${card.name} #${card.collector_number}`} loading="lazy" />
               </Link>
               <p className="caption">
                 {[`#${card.collector_number}`, card.full_art && "Full art", card.border_color === "borderless" && "Borderless"]

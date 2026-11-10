@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import ManaText from "./ManaText.jsx";
+import Collapsible from "./Collapsible.jsx";
 import { getRulings } from "../utils/scryfall";
 
 const FORMAT_NAMES = {
@@ -90,14 +91,24 @@ export default function CardDetail({ card }) {
         <dl className="cardMeta">
           {faces.length > 1 && <Row label="Rarity">{cap(card.rarity)}</Row>}
           {faces.length === 1 && <Row label="Artist">{card.artist}</Row>}
+          <Row label="Links">
+            <a href={card.scryfall_uri} target="_blank" rel="noreferrer">Scryfall</a>
+            {" · "}
+            <a
+              href={`https://tagger.scryfall.com/card/${card.set}/${encodeURIComponent(card.collector_number)}`}
+              target="_blank"
+              rel="noreferrer"
+            >
+              Tagger
+            </a>
+          </Row>
           <Row label="Set">
             <Link to={`/results?set=${card.set}&sort=set`}>{card.set_name}</Link>{" "}
             ({card.set.toUpperCase()} #{card.collector_number})
           </Row>
         </dl>
 
-        <details>
-          <summary>Format legalities</summary>
+        <Collapsible overlay className="overlayPanel" summary="Format legalities">
           <ul className="legalities">
             {Object.entries(card.legalities).map(([format, status]) => (
               <li key={format}>
@@ -106,10 +117,9 @@ export default function CardDetail({ card }) {
               </li>
             ))}
           </ul>
-        </details>
+        </Collapsible>
 
-        <details>
-          <summary>Rulings{rulings ? ` (${rulings.length})` : ""}</summary>
+        <Collapsible overlay className="overlayPanel" summary={`Rulings${rulings ? ` (${rulings.length})` : ""}`}>
           {!rulings && <p className="muted">Loading rulings…</p>}
           {rulings?.length === 0 && <p className="muted">No rulings for this card.</p>}
           <ul className="rulings">
@@ -120,7 +130,7 @@ export default function CardDetail({ card }) {
               </li>
             ))}
           </ul>
-        </details>
+        </Collapsible>
       </div>
     </div>
   );

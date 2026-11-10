@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import ListField from "./ListField.jsx";
 import { allSets, catalog } from "../utils/scryfall";
 import { loadTags, searchTags, randomTag } from "../utils/tags";
+import { parseNegation } from "../utils/searchParams";
 import {
   TYPE_OPTIONS, RULES_OPTIONS, SET_OPTIONS,
   ART_TAGS, FUNCTION_TAGS, typePool, rulesPool, setPool,
@@ -48,10 +49,14 @@ export default function SearchForm({ initial, onSearch, onRandomCard, onDraft })
   }, []);
 
   const add = (field, value) => {
-    const item = asItem(value);
-    if ((field === "art" || field === "function") && typeof value === "string") {
-      // Tag searches use hyphenated slugs, e.g. "squirrel horde" -> squirrel-horde
-      item.value = item.label = value.trim().toLowerCase().replace(/\s+/g, "-");
+    let item = asItem(value);
+    if (typeof value === "string") {
+      const { value: text, negate } = parseNegation(value); // "-elf" adds NOT elf
+      item = { label: text, value: text, negate };
+      if (field === "art" || field === "function") {
+        // Tag searches use hyphenated slugs, e.g. "squirrel horde" -> squirrel-horde
+        item.value = item.label = text.trim().toLowerCase().replace(/\s+/g, "-");
+      }
     }
     if (field === "set") {
       // Resolve typed set names/codes to a code Scryfall understands
@@ -59,10 +64,20 @@ export default function SearchForm({ initial, onSearch, onRandomCard, onDraft })
       const found = sets.find((s) => s.code === q || s.name.toLowerCase() === q);
       if (found) Object.assign(item, setItem(found));
     }
-    setLists((l) => (l[field].some((i) => i.value === item.value) ? l : { ...l, [field]: [...l[field], item] }));
+    setLists((l) =>
+      l[field].some((i) => i.value === item.value && !!i.negate === !!item.negate)
+        ? l
+        : { ...l, [field]: [...l[field], item] }
+    );
   };
   const remove = (field, index) =>
     setLists((l) => ({ ...l, [field]: l[field].filter((_, i) => i !== index) }));
+
+  const toggleNegate = (field, index) =>
+    setLists((l) => ({
+      ...l,
+      [field]: l[field].map((item, i) => (i === index ? { ...item, negate: !item.negate } : item)),
+    }));
 
   const suggestTypes = useMemo(() => {
     const unique = [...new Set(typeNames)];
@@ -92,6 +107,7 @@ export default function SearchForm({ initial, onSearch, onRandomCard, onDraft })
       items={lists[name]}
       onAdd={(v) => add(name, v)}
       onRemove={(i) => remove(name, i)}
+      onToggle={(i) => toggleNegate(name, i)}
     />
   );
 

@@ -1,0 +1,9 @@
+{
+  "name": "card-conclave",
+  "compatibility_date": "2025-09-01",
+  "assets": {
+    "directory": "./dist",
+    // Serve index.html for unknown paths so /card/... and /results?... work on refresh
+    "not_found_handling": "single-page-application"
+  }
+}

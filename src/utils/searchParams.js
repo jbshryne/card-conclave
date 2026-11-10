@@ -4,6 +4,13 @@ export const LIST_KEYS = ["name", "type", "rules", "set", "watermark", "art", "f
 export const SORT_KEYS = ["name", "type", "color", "cmc", "power", "toughness", "rarity", "released", "set"];
 const COLOR_OPS = ["and", "or", "not", "id"];
 
+// A leading "-" means NOT ("-elf"). A minus before a digit stays literal, so rules text
+// like "-1/-1 counter" still works. Negated values are stored in URLs with the "-" prefix.
+export function parseNegation(text) {
+  const m = text.match(/^-(?!\d)\s*(\S[\s\S]*)$/);
+  return m ? { value: m[1], negate: true } : { value: text, negate: false };
+}
+
 export const emptyState = () => ({
   lists: Object.fromEntries(LIST_KEYS.map((k) => [k, []])),
   colors: new Set(),
@@ -16,7 +23,7 @@ export const emptyState = () => ({
 
 export function stateToParams(s) {
   const p = new URLSearchParams();
-  LIST_KEYS.forEach((k) => s.lists[k].forEach((i) => p.append(k, i.value)));
+  LIST_KEYS.forEach((k) => s.lists[k].forEach((i) => p.append(k, (i.negate ? "-" : "") + i.value)));
   if (s.colorless) p.set("colors", "c");
   else if (s.colors.size) p.set("colors", [...s.colors].join(""));
   if (s.colorless || s.colors.size) p.set("colorOp", s.colorOp);
@@ -31,7 +38,10 @@ export function stateToParams(s) {
 export function paramsToState(p) {
   const s = emptyState();
   LIST_KEYS.forEach((k) => {
-    s.lists[k] = p.getAll(k).map((v) => ({ label: k === "set" ? v.toUpperCase() : v, value: v }));
+    s.lists[k] = p.getAll(k).map((raw) => {
+      const { value, negate } = parseNegation(raw);
+      return { label: k === "set" ? value.toUpperCase() : value, value, negate };
+    });
   });
   const colors = p.get("colors") ?? "";
   if (colors === "c") s.colorless = true;

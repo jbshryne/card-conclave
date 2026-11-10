@@ -1,23 +1,53 @@
-import { useState } from "react";
+import { useId, useState } from "react";
+import Collapsible from "./Collapsible.jsx";
 
 // One search row: text input + "add to list", optional random picker,
-// optional suggestions, and the chosen terms.
-// onAdd receives either a string (typed) or an {label, value} item (suggestion).
+// an autosuggest dropdown that floats over the page, and the chosen terms.
+// onAdd receives either a string (typed) or an {label, value} item (suggestion/random).
 // onRandom(category) must resolve to an {label, value} item.
 export default function ListField({
-  id, label, placeholder, items, onAdd, onRemove,
+  id, label, placeholder, items, onAdd, onRemove, onToggle,
   randomOptions, onRandom, suggest,
 }) {
   const [text, setText] = useState("");
   const [pick, setPick] = useState(randomOptions?.[0]?.value);
+  const [focused, setFocused] = useState(false);
+  const [dismissed, setDismissed] = useState(false);
+  const [active, setActive] = useState(-1);
+  const listId = useId();
 
   const trimmed = text.trim();
-  const suggestions = suggest && trimmed.length >= 2 ? suggest(trimmed).slice(0, 8) : [];
+  const negated = /^-(?!\d)/.test(trimmed); // "-elf" = exclude; "-1/-1" stays literal rules text
+  const lookup = negated ? trimmed.slice(1).trim() : trimmed;
+  const suggestions = suggest && lookup.length >= 2 ? suggest(lookup).slice(0, 8) : [];
+  const open = focused && !dismissed && suggestions.length > 0;
 
+  const choose = (item) => {
+    onAdd(negated ? { ...item, negate: true } : item);
+    setText("");
+    setActive(-1);
+  };
   const addTyped = () => {
     if (!trimmed) return;
     onAdd(trimmed);
     setText("");
+  };
+
+  const onKeyDown = (e) => {
+    if (open && e.key === "ArrowDown") {
+      e.preventDefault();
+      setActive((i) => (i + 1) % suggestions.length);
+    } else if (open && e.key === "ArrowUp") {
+      e.preventDefault();
+      setActive((i) => (i <= 0 ? suggestions.length - 1 : i - 1));
+    } else if (e.key === "Escape") {
+      setDismissed(true);
+      setActive(-1);
+    } else if (e.key === "Enter" && trimmed) {
+      e.preventDefault(); // Enter picks the highlighted suggestion or adds the typed text; an empty box lets Enter submit
+      if (open && active >= 0) choose(suggestions[active]);
+      else addTyped();
+    }
   };
 
   return (
@@ -25,28 +55,54 @@ export default function ListField({
       <div className="searchField">
         <span className="textInputSection">
           <label htmlFor={id}>{label}</label>
-          <input
-            id={id}
-            type="text"
-            value={text}
-            placeholder={placeholder}
-            autoComplete="off"
-            onChange={(e) => setText(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && trimmed) {
-                e.preventDefault(); // Enter adds to the list; an empty box lets Enter submit
-                addTyped();
-              }
-            }}
-          />
+          <span className="inputWrap">
+            <input
+              id={id}
+              type="text"
+              value={text}
+              placeholder={placeholder}
+              autoComplete="off"
+              role={suggest ? "combobox" : undefined}
+              aria-expanded={suggest ? open : undefined}
+              aria-controls={suggest ? listId : undefined}
+              aria-autocomplete={suggest ? "list" : undefined}
+              aria-activedescendant={open && active >= 0 ? `${listId}-${active}` : undefined}
+              onChange={(e) => {
+                setText(e.target.value);
+                setActive(-1);
+                setDismissed(false);
+              }}
+              onFocus={() => setFocused(true)}
+              onBlur={() => setFocused(false)}
+              onKeyDown={onKeyDown}
+            />
+            {open && (
+              <ul className="suggestions" role="listbox" id={listId}>
+                {suggestions.map((s, i) => (
+                  <li
+                    key={s.value + s.label}
+                    id={`${listId}-${i}`}
+                    role="option"
+                    aria-selected={i === active}
+                    onMouseDown={(e) => {
+                      e.preventDefault(); // keep focus in the input
+                      choose(s);
+                    }}
+                    onMouseEnter={() => setActive(i)}
+                  >
+                    {s.label}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </span>
           <button type="button" className="smallButton" onClick={addTyped}>
             Add to list
           </button>
         </span>
 
         {randomOptions && (
-          <details className="randomControls">
-            <summary>Random</summary>
+          <Collapsible className="randomControls" summary="Random">
             <div className="rc-content">
               {randomOptions.length > 1 && (
                 <select value={pick} onChange={(e) => setPick(e.target.value)} aria-label={`${label} random category`}>
@@ -66,27 +122,22 @@ export default function ListField({
                 Add random
               </button>
             </div>
-          </details>
-        )}
-
-        {suggestions.length > 0 && (
-          <div className="suggestions">
-            {suggestions.map((s) => (
-              <button
-                type="button"
-                key={s.value + s.label}
-                onClick={() => { onAdd(s); setText(""); }}
-              >
-                {s.label}
-              </button>
-            ))}
-          </div>
+          </Collapsible>
         )}
 
         <ul className="selectedParamList">
           {items.map((item, i) => (
-            <li key={item.label + i}>
-              {item.label}
+            <li key={item.label + i} className={item.negate ? "negated" : undefined}>
+              <button
+                type="button"
+                className="chipToggle"
+                aria-pressed={!!item.negate}
+                title="Click to switch between include and NOT"
+                onClick={() => onToggle(i)}
+              >
+                {item.negate && <span className="notTag">NOT</span>}
+                {item.label}
+              </button>
               <button type="button" onClick={() => onRemove(i)} aria-label={`Remove ${item.label}`}>×</button>
             </li>
           ))}

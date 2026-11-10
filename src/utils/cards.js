@@ -1,5 +1,6 @@
-export const cardImage = (card) =>
-  card.image_uris?.normal ?? card.card_faces?.[0]?.image_uris?.normal ?? "";
+// size: a Scryfall image size such as "normal" (488px wide) or "large" (672px wide)
+export const cardImage = (card, size = "normal") =>
+  card.image_uris?.[size] ?? card.card_faces?.[0]?.image_uris?.[size] ?? "";
 
 // "Basic Land — Island", "Basic Snow Land — Forest", "Basic Land — Wastes"
 export const isBasicLand = (card) => /^Basic .*Land/.test(card.type_line ?? "");

@@ -38,6 +38,9 @@ export default function SearchPage() {
 
   return (
     <main id="mainContent">
+      <p className="formHint">
+        Start a term with <b>-</b> to exclude it, or click any chip to switch it to NOT.
+      </p>
       <SearchForm initial={initial} onSearch={go("/results")} onRandomCard={go("/random", false)} onDraft={saveDraft} />
       {error && <p className="errorMessage" role="alert">{error}</p>}
     </main>

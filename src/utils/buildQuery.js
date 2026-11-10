@@ -3,12 +3,34 @@ const tokens = (text) => text.match(/"[^"]+"|\S+/g) ?? [];
 const quote = (v) => (/\s/.test(v) ? `"${v}"` : v);
 const anyOf = (terms) => (terms.length > 1 ? `(${terms.join(" or ")})` : terms[0]);
 
-export function buildQuery({ lists, colors, colorless, colorOp, rarities, options }) {
-  const parts = [];
+// name / type / rules: every word must match. A NOT item excludes the whole item,
+// e.g. -(o:deal o:damage) removes cards containing both words.
+function textTerms(prefix, items) {
+  return items.flatMap((i) => {
+    const terms = tokens(i.value).map((t) => `${prefix}:${t}`);
+    if (!terms.length) return [];
+    if (!i.negate) return terms;
+    return [terms.length > 1 ? `-(${terms.join(" ")})` : `-${terms[0]}`];
+  });
+}
 
-  lists.name.forEach((i) => tokens(i.value).forEach((t) => parts.push(`name:${t}`)));
-  lists.type.forEach((i) => tokens(i.value).forEach((t) => parts.push(`t:${t}`)));
-  lists.rules.forEach((i) => tokens(i.value).forEach((t) => parts.push(`o:${t}`)));
+// set / watermark: a card has only one of these, so several included values mean "any of".
+function choiceTerms(prefix, items) {
+  const include = items.filter((i) => !i.negate).map((i) => `${prefix}:${quote(i.value)}`);
+  const exclude = items.filter((i) => i.negate).map((i) => `-${prefix}:${quote(i.value)}`);
+  return [...(include.length ? [anyOf(include)] : []), ...exclude];
+}
+
+// art / function tags: all must match (or, for NOT items, none).
+const tagTerms = (prefix, items) =>
+  items.map((i) => `${i.negate ? "-" : ""}${prefix}:${quote(i.value)}`);
+
+export function buildQuery({ lists, colors, colorless, colorOp, rarities, options }) {
+  const parts = [
+    ...textTerms("name", lists.name),
+    ...textTerms("t", lists.type),
+    ...textTerms("o", lists.rules),
+  ];
 
   const cs = [...colors].join("");
   if (colorless) {
@@ -20,15 +42,11 @@ export function buildQuery({ lists, colors, colorless, colorOp, rarities, option
     if (colorOp === "id") parts.push(`id<=${cs}`);
   }
 
-  // A card has one rarity / watermark, so multiples mean "any of these"
   if (rarities.size) parts.push(anyOf([...rarities].map((r) => `r:${r}`)));
-  if (lists.set.length) parts.push(anyOf(lists.set.map((i) => `s:${quote(i.value)}`)));
-  if (lists.watermark.length) {
-    parts.push(anyOf(lists.watermark.map((i) => `wm:${quote(i.value)}`)));
-  }
-
-  lists.art.forEach((i) => parts.push(`art:${quote(i.value)}`));
-  lists.function.forEach((i) => parts.push(`function:${quote(i.value)}`));
+  parts.push(...choiceTerms("s", lists.set));
+  parts.push(...choiceTerms("wm", lists.watermark));
+  parts.push(...tagTerms("art", lists.art));
+  parts.push(...tagTerms("function", lists.function));
 
   if (options.firstPrintings) parts.push("is:firstprint");
   if (options.includeExtras) parts.push("include:extras");
