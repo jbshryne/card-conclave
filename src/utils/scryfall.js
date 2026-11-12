@@ -24,8 +24,8 @@ export const allSets = () => (cache.sets ??= getJson(`${API}/sets`).then((j) => 
 
 // Fetches every page (up to `max` cards) so client-side sorting sees the full set.
 // unique: "cards" (one result per card) or "prints" (every printing / art variant)
-export async function searchAll(query, order, onProgress, max = 1000, unique = "cards") {
-  let url = `${API}/cards/search?q=${encodeURIComponent(query)}&order=${order}&unique=${unique}`;
+export async function searchAll(query, order, onProgress, max = 1000, unique = "cards", dir = "asc") {
+  let url = `${API}/cards/search?q=${encodeURIComponent(query)}&order=${order}&dir=${dir}&unique=${unique}`;
   const cards = [];
   try {
     while (url && cards.length < max) {

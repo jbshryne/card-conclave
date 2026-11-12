@@ -14,6 +14,16 @@ function textTerms(prefix, items) {
   });
 }
 
+// Card names picked from the list are exact (!"Lightning Bolt") and can only match one card,
+// so several of them mean "any of these". Typed words behave like name/type/rules text.
+function nameTerms(items) {
+  const exact = items.filter((i) => i.value.startsWith("!"));
+  const loose = items.filter((i) => !i.value.startsWith("!"));
+  const include = exact.filter((i) => !i.negate).map((i) => i.value);
+  const exclude = exact.filter((i) => i.negate).map((i) => `-${i.value}`);
+  return [...textTerms("name", loose), ...(include.length ? [anyOf(include)] : []), ...exclude];
+}
+
 // set / watermark: a card has only one of these, so several included values mean "any of".
 function choiceTerms(prefix, items) {
   const include = items.filter((i) => !i.negate).map((i) => `${prefix}:${quote(i.value)}`);
@@ -27,7 +37,7 @@ const tagTerms = (prefix, items) =>
 
 export function buildQuery({ lists, colors, colorless, colorOp, rarities, options }) {
   const parts = [
-    ...textTerms("name", lists.name),
+    ...nameTerms(lists.name),
     ...textTerms("t", lists.type),
     ...textTerms("o", lists.rules),
   ];

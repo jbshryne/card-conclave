@@ -3,6 +3,7 @@ import ListField from "./ListField.jsx";
 import { allSets, catalog } from "../utils/scryfall";
 import { loadTags, searchTags, randomTag } from "../utils/tags";
 import { parseNegation } from "../utils/searchParams";
+import { searchNames, randomName, randomWord, NAME_RANDOM_OPTIONS } from "../utils/names";
 import {
   TYPE_OPTIONS, RULES_OPTIONS, SET_OPTIONS,
   ART_TAGS, FUNCTION_TAGS, typePool, rulesPool, setPool,
@@ -12,10 +13,6 @@ import {
 const COLORS = [["w", "White"], ["u", "Blue"], ["b", "Black"], ["r", "Red"], ["g", "Green"]];
 const COLOR_OPS = [["and", "Exactly"], ["or", "Including"], ["not", "Excluding"], ["id", "Identity (EDH)"]];
 const RARITIES = [["c", "Common"], ["u", "Uncommon"], ["r", "Rare"], ["m", "Mythic Rare"]];
-const SORTS = [
-  ["name", "Name"], ["type", "Type"], ["color", "Color"], ["cmc", "Mana Value"], ["power", "Power"],
-  ["toughness", "Toughness"], ["rarity", "Rarity"], ["released", "Release Date"], ["set", "Set & Collector #"],
-];
 
 const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
 const asItem = (v) => (typeof v === "string" ? { label: v, value: v } : v);
@@ -25,16 +22,17 @@ const toggle = (set, v) => {
   return next;
 };
 
-export default function SearchForm({ initial, onSearch, onRandomCard, onDraft }) {
+export default function SearchForm({ initial, onSearch, onRandomCard, onDraft, onReset }) {
   const [lists, setLists] = useState(initial.lists);
   const [colors, setColors] = useState(initial.colors);
   const [colorless, setColorless] = useState(initial.colorless);
   const [colorOp, setColorOp] = useState(initial.colorOp);
   const [rarities, setRarities] = useState(initial.rarities);
   const [options, setOptions] = useState(initial.options);
-  const [sort, setSort] = useState(initial.sort);
+  const { sort, dir } = initial; // sorting is chosen on the results page; carried along unchanged
   const [typeNames, setTypeNames] = useState([]);
   const [sets, setSets] = useState([]);
+  const [cardNames, setCardNames] = useState([]);
   const [watermarks, setWatermarks] = useState([]);
   const [artTags, setArtTags] = useState([]);
   const [functionTags, setFunctionTags] = useState([]);
@@ -43,6 +41,7 @@ export default function SearchForm({ initial, onSearch, onRandomCard, onDraft })
   useEffect(() => {
     allTypes().then(setTypeNames).catch(() => {});
     allSets().then(setSets).catch(() => {});
+    catalog("card-names").then(setCardNames).catch(() => {});
     catalog("watermarks").then(setWatermarks).catch(() => {});
     loadTags("art").then(setArtTags);
     loadTags("function").then(setFunctionTags);
@@ -89,7 +88,7 @@ export default function SearchForm({ initial, onSearch, onRandomCard, onDraft })
       .filter((s) => s.name.toLowerCase().includes(text.toLowerCase()) || s.code === text.toLowerCase())
       .map(setItem);
 
-  const state = { lists, colors, colorless, colorOp, rarities, options, sort };
+  const state = { lists, colors, colorless, colorOp, rarities, options, sort, dir };
 
   // Keep a draft so the form is still filled in when you come back from the results page
   useEffect(() => {
@@ -113,7 +112,13 @@ export default function SearchForm({ initial, onSearch, onRandomCard, onDraft })
 
   return (
     <form autoComplete="off" id="searchForm" onSubmit={submit}>
-      {field("name", { id: "nameInput", label: "Card Name:", placeholder: "Words can be full or partial" })}
+      {field("name", {
+        id: "nameInput", label: "Card Name:", placeholder: "Words can be full or partial",
+        randomOptions: NAME_RANDOM_OPTIONS,
+        suggest: (text) => searchNames(cardNames, text),
+        onRandom: async (key) =>
+          key === "word" ? randomWord(await catalog("word-bank")) : randomName(await catalog("card-names")),
+      })}
 
       {field("type", {
         id: "typeInput", label: "Card Types:", placeholder: "Including super- and/or subtypes",
@@ -205,22 +210,12 @@ export default function SearchForm({ initial, onSearch, onRandomCard, onDraft })
         )}
       </fieldset>
 
-      <section className="row">
-        <div className="searchField">
-          <label htmlFor="sortDropdown">Sort results by:</label>
-          <select id="sortDropdown" value={sort} onChange={(e) => setSort(e.target.value)}>
-            {SORTS.map(([value, text]) => (
-              <option key={value} value={value}>{text}</option>
-            ))}
-          </select>
-        </div>
-      </section>
-
       <div className="buttonDiv">
         <button type="submit" id="allCardsBtn">All Cards</button>
         <button type="button" id="randomBtn" onClick={() => onRandomCard(state)}>
           Randomizer!
         </button>
+        <button type="button" id="resetBtn" onClick={onReset}>New Search</button>
       </div>
     </form>
   );

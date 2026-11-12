@@ -37,9 +37,9 @@ export default function CardDetail({ card }) {
   const [rulings, setRulings] = useState(null);
 
   useEffect(() => {
-    document.title = `${card.name} – Card Conclave`;
+    document.title = `${card.name} – Chancery Archives`;
     return () => {
-      document.title = "Card Conclave";
+      document.title = "Chancery Archives";
     };
   }, [card.name]);
 
@@ -91,17 +91,6 @@ export default function CardDetail({ card }) {
         <dl className="cardMeta">
           {faces.length > 1 && <Row label="Rarity">{cap(card.rarity)}</Row>}
           {faces.length === 1 && <Row label="Artist">{card.artist}</Row>}
-          <Row label="Links">
-            <a href={card.scryfall_uri} target="_blank" rel="noreferrer">Scryfall</a>
-            {" · "}
-            <a
-              href={`https://tagger.scryfall.com/card/${card.set}/${encodeURIComponent(card.collector_number)}`}
-              target="_blank"
-              rel="noreferrer"
-            >
-              Tagger
-            </a>
-          </Row>
           <Row label="Set">
             <Link to={`/results?set=${card.set}&sort=set`}>{card.set_name}</Link>{" "}
             ({card.set.toUpperCase()} #{card.collector_number})
@@ -131,6 +120,18 @@ export default function CardDetail({ card }) {
             ))}
           </ul>
         </Collapsible>
+
+        <p className="cardLinks">
+          <a href={card.scryfall_uri} target="_blank" rel="noreferrer">View on Scryfall</a>
+          {" · "}
+          <a
+            href={`https://tagger.scryfall.com/card/${card.set}/${encodeURIComponent(card.collector_number)}`}
+            target="_blank"
+            rel="noreferrer"
+          >
+            Tagger
+          </a>
+        </p>
       </div>
     </div>
   );

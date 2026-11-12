@@ -19,6 +19,7 @@ export const emptyState = () => ({
   rarities: new Set(),
   options: { firstPrintings: false, includeExtras: false, isFunny: false },
   sort: "type",
+  dir: "asc",
 });
 
 export function stateToParams(s) {
@@ -32,6 +33,7 @@ export function stateToParams(s) {
   if (s.options.includeExtras) p.set("extras", "1");
   if (s.options.isFunny) p.set("funny", "1");
   p.set("sort", s.sort);
+  if (s.dir === "desc") p.set("dir", "desc");
   return p;
 }
 
@@ -40,7 +42,9 @@ export function paramsToState(p) {
   LIST_KEYS.forEach((k) => {
     s.lists[k] = p.getAll(k).map((raw) => {
       const { value, negate } = parseNegation(raw);
-      return { label: k === "set" ? value.toUpperCase() : value, value, negate };
+      // exact-name picks are stored as !"Name"; show just the name on the chip
+      const label = k === "set" ? value.toUpperCase() : k === "name" ? value.replace(/^!?(["'])(.*)\1$/, "$2") : value;
+      return { label, value, negate };
     });
   });
   const colors = p.get("colors") ?? "";
@@ -54,5 +58,6 @@ export function paramsToState(p) {
     isFunny: p.get("funny") === "1",
   };
   if (SORT_KEYS.includes(p.get("sort"))) s.sort = p.get("sort");
+  s.dir = p.get("dir") === "desc" ? "desc" : "asc";
   return s;
 }

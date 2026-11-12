@@ -6,16 +6,25 @@ import RandomPage from "./pages/RandomPage.jsx";
 import BasicLandsPage from "./pages/BasicLandsPage.jsx";
 
 function Layout() {
+  const year = new Date().getFullYear();
   return (
     <>
       <header>
-        <h1><Link to="/">Card Conclave</Link></h1>
-        <p className="tagline">A grimoire of Magic cards</p>
+        <h1><Link to="/">Chancery Archives</Link></h1>
+        <p className="tagline">A registry of arcane records</p>
       </header>
       <Outlet />
       <footer>
         <small>
-          © 2025 Card Conclave. Powered by <a href="https://scryfall.com/">Scryfall</a>.
+          © {year} Chancery Archives. Card data and images from <a href="https://scryfall.com/">Scryfall</a>.
+        </small>
+        <small className="disclaimer">
+          Chancery Archives is unofficial Fan Content permitted under the{" "}
+          <a href="https://company.wizards.com/en/legal/fancontentpolicy" target="_blank" rel="noreferrer">
+            Fan Content Policy
+          </a>
+          . Not approved/endorsed by Wizards. Portions of the materials used are property of Wizards of the
+          Coast. ©Wizards of the Coast LLC.
         </small>
       </footer>
     </>

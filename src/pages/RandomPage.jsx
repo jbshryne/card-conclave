@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import BackButton from "../components/BackButton.jsx";
 import CardDetail from "../components/CardDetail.jsx";
+import NewSearchButton from "../components/NewSearchButton.jsx";
 import { randomCard } from "../utils/scryfall";
 import { buildQuery } from "../utils/buildQuery";
 import { paramsToState } from "../utils/searchParams";
@@ -52,6 +53,7 @@ export default function RandomPage() {
           {loading && card ? "Drawing…" : "Re-randomize"}
         </button>
         {query && <Link className="buttonLink" to={{ pathname: "/", search: `?${key}` }}>Edit search</Link>}
+        <NewSearchButton />
         <span className="muted">
           {query ? "Random card matching your search" : "Random card from all of Magic"}
         </span>

@@ -17,7 +17,7 @@ import { pathToFileURL } from "node:url";
 const API = "https://api.scryfall.com";
 // Scryfall requires User-Agent + Accept headers. Put real contact info in the User-Agent.
 const HEADERS = {
-  "User-Agent": "CardConclave/1.0 (contact: jbshryne@gmail.com)",
+  "User-Agent": "ChanceryArchives/1.0 (contact: you@example.com)",
   Accept: "application/json;q=0.9,*/*;q=0.8",
 };
 const OUT = "public/tags";
@@ -34,10 +34,7 @@ export function parseBulk(input) {
   if (buf[0] === 0x1f && buf[1] === 0x8b) buf = gunzipSync(buf);
   const text = buf.toString("utf8").trim();
   if (text.startsWith("[")) return JSON.parse(text);
-  return text
-    .split("\n")
-    .filter((l) => l.trim())
-    .map((l) => JSON.parse(l));
+  return text.split("\n").filter((l) => l.trim()).map((l) => JSON.parse(l));
 }
 
 // Reduces tag objects to {slug, label, count}. Parent tags have no direct taggings of
@@ -67,13 +64,9 @@ export function summarize(tags) {
 export function pickDownloadUri(entry) {
   const direct = entry.jsonl_download_uri || entry.download_uri;
   if (direct) return direct;
-  const key = Object.keys(entry).find(
-    (k) => /download/i.test(k) && /^https?:/.test(String(entry[k])),
-  );
+  const key = Object.keys(entry).find((k) => /download/i.test(k) && /^https?:/.test(String(entry[k])));
   if (key) return entry[key];
-  throw new Error(
-    `No download link on bulk entry. Fields present: ${JSON.stringify(entry, null, 2)}`,
-  );
+  throw new Error(`No download link on bulk entry. Fields present: ${JSON.stringify(entry, null, 2)}`);
 }
 
 async function getJson(url) {
@@ -85,22 +78,15 @@ async function getJson(url) {
 async function main() {
   await mkdir(OUT, { recursive: true });
   const metaPath = `${OUT}/meta.json`;
-  const meta = existsSync(metaPath)
-    ? JSON.parse(await readFile(metaPath, "utf8"))
-    : {};
+  const meta = existsSync(metaPath) ? JSON.parse(await readFile(metaPath, "utf8")) : {};
   const { data: files } = await getJson(`${API}/bulk-data`);
 
   for (const { type, file } of KINDS) {
     const entry = files.find((f) => f.type === type);
     if (!entry) {
-      throw new Error(
-        `No "${type}" bulk file found. Available: ${files.map((f) => f.type).join(", ")}`,
-      );
+      throw new Error(`No "${type}" bulk file found. Available: ${files.map((f) => f.type).join(", ")}`);
     }
-    if (
-      meta[type]?.updated_at === entry.updated_at &&
-      existsSync(`${OUT}/${file}`)
-    ) {
+    if (meta[type]?.updated_at === entry.updated_at && existsSync(`${OUT}/${file}`)) {
       console.log(`${type}: unchanged (${entry.updated_at})`);
       continue;
     }
@@ -109,20 +95,14 @@ async function main() {
     const res = await fetch(url, { headers: HEADERS });
     if (!res.ok) throw new Error(`${url} -> HTTP ${res.status}`);
     const rows = summarize(parseBulk(await res.arrayBuffer()));
-    await writeFile(
-      `${OUT}/${file}`,
-      JSON.stringify(rows.map((r) => [r.slug, r.label, r.count])),
-    );
+    await writeFile(`${OUT}/${file}`, JSON.stringify(rows.map((r) => [r.slug, r.label, r.count])));
     meta[type] = { updated_at: entry.updated_at };
     console.log(`${type}: wrote ${rows.length} tags`);
   }
   await writeFile(metaPath, JSON.stringify(meta, null, 2) + "\n");
 }
 
-if (
-  process.argv[1] &&
-  import.meta.url === pathToFileURL(process.argv[1]).href
-) {
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   main().catch((err) => {
     console.error(err.message);
     process.exit(1);

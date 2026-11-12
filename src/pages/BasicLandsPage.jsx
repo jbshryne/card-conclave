@@ -5,6 +5,7 @@ import { searchAll } from "../utils/scryfall";
 import { cardImage } from "../utils/cards";
 import { SIZES, useCardSize } from "../utils/useCardSize";
 import SizeControl from "../components/SizeControl.jsx";
+import NewSearchButton from "../components/NewSearchButton.jsx";
 
 const cache = new Map();
 
@@ -55,6 +56,7 @@ export default function BasicLandsPage() {
     <section className="results">
       <div className="resultsBar">
         <BackButton />
+        <NewSearchButton />
         <span>
           {name} {setName ? `— ${setName} (${set.toUpperCase()})` : ""}
           {cards ? ` · ${cards.length} versions` : ""}

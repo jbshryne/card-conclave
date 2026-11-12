@@ -3,30 +3,22 @@ import { useLocation, useNavigate } from "react-router-dom";
 import SearchForm from "../components/SearchForm.jsx";
 import { buildQuery } from "../utils/buildQuery";
 import { emptyState, paramsToState, stateToParams } from "../utils/searchParams";
-
-const DRAFT_KEY = "cardConclaveDraft";
+import { clearDraft, loadDraft, saveDraft } from "../utils/draft";
 
 export default function SearchPage() {
   const navigate = useNavigate();
   const { search } = useLocation();
   const [error, setError] = useState("");
+  const [formKey, setFormKey] = useState(0); // changing this remounts the form, clearing every field
 
   // Start from the URL ("Edit search"), else the saved draft, else a blank form
-  const [initial] = useState(() => {
+  const [initial, setInitial] = useState(() => {
     const fromUrl = new URLSearchParams(search);
     if ([...fromUrl.keys()].length) return paramsToState(fromUrl);
-    try {
-      const draft = sessionStorage.getItem(DRAFT_KEY);
-      if (draft) return paramsToState(new URLSearchParams(draft));
-    } catch {}
+    const draft = loadDraft();
+    if (draft) return paramsToState(new URLSearchParams(draft));
     return emptyState();
   });
-
-  const saveDraft = (state) => {
-    try {
-      sessionStorage.setItem(DRAFT_KEY, stateToParams(state).toString());
-    } catch {}
-  };
 
   const go = (path, requireCriteria = true) => (state) => {
     if (requireCriteria && !buildQuery(state)) {
@@ -36,12 +28,27 @@ export default function SearchPage() {
     navigate(`${path}?${stateToParams(state)}`);
   };
 
+  const reset = () => {
+    clearDraft();
+    setInitial(emptyState());
+    setFormKey((k) => k + 1);
+    setError("");
+    if (search) navigate("/", { replace: true }); // drop any params left in the URL
+  };
+
   return (
     <main id="mainContent">
       <p className="formHint">
         Start a term with <b>-</b> to exclude it, or click any chip to switch it to NOT.
       </p>
-      <SearchForm initial={initial} onSearch={go("/results")} onRandomCard={go("/random", false)} onDraft={saveDraft} />
+      <SearchForm
+        key={formKey}
+        initial={initial}
+        onSearch={go("/results")}
+        onRandomCard={go("/random", false)}
+        onDraft={(state) => saveDraft(stateToParams(state))}
+        onReset={reset}
+      />
       {error && <p className="errorMessage" role="alert">{error}</p>}
     </main>
   );

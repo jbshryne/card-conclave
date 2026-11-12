@@ -1,40 +1,55 @@
 /* ==========================================================
-   Card Conclave: a spellbook theme
-   Palette from the original site: ink-black ground, aged-cream
-   text, antique gold, and leather-brown panels.
+   Chancery Archives: an Azorius-tinged spellbook theme
+   Palette: midnight ground, cool-white text, silver-blue accents
+   and deep indigo panels.
    ========================================================== */
 :root {
-  --bg: rgb(20, 20, 25);
-  --ink: rgb(229, 222, 212);
-  --muted: rgb(191, 185, 178);
+  --bg: rgb(15, 18, 28);
+  --ink: rgb(228, 230, 236);
+  --muted: rgb(172, 180, 196);
+  --silver: rgb(184, 200, 226);
+  --silver-dim: rgba(184, 200, 226, 0.35);
+  --silver-faint: rgba(184, 200, 226, 0.15);
   --gold: rgb(199, 180, 133);
-  --gold-dim: rgba(199, 180, 133, 0.35);
-  --gold-faint: rgba(199, 180, 133, 0.15);
-  --panel: rgba(55, 42, 18, 0.8);
-  --leather: rgb(40, 28, 15);
-  --parchment: rgb(223, 209, 190);
-  --parchment-ink: rgb(48, 36, 20);
+  --gold-dim: rgba(199, 180, 133, 0.4);
+  --gold-faint: rgba(199, 180, 133, 0.2);
+  --panel: rgba(24, 32, 54, 0.8);
+  --leather: rgb(17, 23, 40);
+  --vellum: rgb(222, 227, 238);
+  --vellum-ink: rgb(22, 30, 50);
   --salmon: salmon;
   --display: "IM Fell Double Pica", Georgia, serif;
-  --accent: "Uncial Antiqua", "IM Fell Double Pica", serif;
+  --formal: "Cinzel", "IM Fell Double Pica", Georgia, serif;
   color-scheme: dark;
 }
 
 * { box-sizing: border-box; }
 
 body {
+  overflow-x: clip; /* safety net: never let one wide element widen the whole page */
   margin: 0;
   color: var(--ink);
   font: 120%/1.5 "EB Garamond", Georgia, serif;
   background:
-    radial-gradient(ellipse 80% 60% at 50% 0%, rgb(46, 36, 26) 0%, transparent 70%),
+    radial-gradient(ellipse 80% 60% at 50% 0%, rgb(28, 40, 70) 0%, transparent 70%),
     radial-gradient(ellipse at center, transparent 50%, rgba(0, 0, 0, 0.55) 100%),
     var(--bg);
   background-attachment: fixed;
 }
+/* faint fluted columns down both edges: a colonnade seen in shadow (wide screens only) */
+body::before {
+  content: "";
+  position: fixed; inset: 0; z-index: -1; pointer-events: none;
+  background:
+    repeating-linear-gradient(90deg, rgba(184, 200, 226, 0.06) 0 2px, transparent 2px 22px) left / 14vw 100% no-repeat,
+    repeating-linear-gradient(90deg, rgba(184, 200, 226, 0.06) 0 2px, transparent 2px 22px) right / 14vw 100% no-repeat;
+  -webkit-mask-image: linear-gradient(90deg, #000 0, #000 7vw, transparent 14vw, transparent calc(100% - 14vw), #000 calc(100% - 7vw), #000 100%);
+  mask-image: linear-gradient(90deg, #000 0, #000 7vw, transparent 14vw, transparent calc(100% - 14vw), #000 calc(100% - 7vw), #000 100%);
+}
+@media (max-width: 900px) { body::before { display: none; } }
 #root { min-height: 100vh; display: flex; flex-direction: column; }
 a { color: inherit; font-weight: bold; text-decoration: none; }
-a:hover { color: var(--gold); }
+a:hover { color: var(--silver); }
 ul { list-style: none; padding: 0; }
 :focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
 [hidden] { display: none !important; }
@@ -45,10 +60,10 @@ header, footer, .errorMessage { display: flex; flex-direction: column; align-ite
 header { padding: 2.2rem 1rem 1.2rem; }
 h1 {
   margin: 0;
-  font: 400 clamp(2.4rem, 7vw, 3.8rem)/1.1 var(--display);
-  letter-spacing: 0.08em;
+  font: 600 clamp(1.7rem, 6vw, 3.2rem)/1.15 var(--formal);
+  letter-spacing: 0.14em;
   text-transform: uppercase;
-  background: linear-gradient(180deg, var(--ink) 20%, var(--gold) 90%);
+  background: linear-gradient(180deg, var(--ink) 20%, var(--silver) 90%);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -58,7 +73,7 @@ h1 a { color: inherit; }
 .tagline { margin: 0.2rem 0 0; font-style: italic; color: var(--muted); letter-spacing: 0.12em; }
 /* ornamental rule: a hairline with a gap holding a lozenge */
 header::after, footer::before {
-  content: "❖";
+  content: "◇";
   display: block;
   width: min(460px, 85vw);
   margin-top: 1rem;
@@ -68,20 +83,23 @@ header::after, footer::before {
 }
 footer { margin-top: auto; padding: 3rem 1rem 1.5rem; color: var(--muted); }
 footer::before { margin: 0 0 1rem; }
-footer a { color: var(--gold); }
-.loading-message { text-align: center; color: var(--gold); font-family: var(--display); font-style: italic; animation: flash 2s infinite; }
+footer a { color: var(--silver); }
+footer small { font-size: 0.9rem; }
+.disclaimer { max-width: 64ch; margin-top: 0.7rem; font-size: 0.8rem; line-height: 1.45; opacity: 0.85; }
+.loading-message { text-align: center; color: var(--silver); font-family: var(--display); font-style: italic; animation: flash 2s infinite; }
 @keyframes flash { 0%, 100% { opacity: 0.1; } 40%, 60% { opacity: 1; } }
 .errorMessage { color: var(--salmon); margin: 1rem; }
-.errorMessage a { color: var(--gold); }
+.errorMessage a { color: var(--silver); }
 
 /* ---------- buttons ---------- */
 button, .buttonLink {
   display: inline-block;
-  font: bolder 0.8rem/1.2 var(--accent);
-  letter-spacing: 0.03em;
-  color: var(--parchment-ink);
-  background: linear-gradient(180deg, rgb(214, 196, 150), var(--gold));
-  border: 1px solid rgb(120, 98, 52);
+  font: 600 0.72rem/1.2 var(--formal);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--vellum-ink);
+  background: linear-gradient(180deg, rgb(214, 226, 244), var(--silver));
+  border: 1px solid rgb(176, 152, 96);
   border-radius: 8px;
   padding: 0.55rem 0.9rem;
   cursor: pointer;
@@ -89,21 +107,22 @@ button, .buttonLink {
   box-shadow: 0 2px 0 rgba(0, 0, 0, 0.5);
   transition: filter 0.15s, transform 0.15s;
 }
-button:hover:not(:disabled), .buttonLink:hover { filter: brightness(1.12); color: var(--parchment-ink); }
+button:hover:not(:disabled), .buttonLink:hover { filter: brightness(1.12); color: var(--vellum-ink); }
 button:active:not(:disabled) { transform: translateY(1px); box-shadow: none; }
 button:disabled { opacity: 0.55; cursor: wait; }
 .buttonLink.primary { box-shadow: 0 0 0 2px var(--gold-dim), 0 2px 0 rgba(0, 0, 0, 0.5); }
 
 /* ---------- search form: pages of the tome ---------- */
 main { width: min(880px, 100%); margin: 0 auto; padding: 0 1rem; }
-#searchForm { display: grid; gap: 1.1rem; justify-items: stretch; }
+#searchForm { display: grid; grid-template-columns: minmax(0, 1fr); gap: 1.1rem; justify-items: stretch; }
+fieldset, .row, .searchField { min-width: 0; }
 
 .searchField, fieldset {
   position: relative;
   margin: 0;
   padding: 1rem 1.2rem;
   background: var(--panel);
-  border: 5px ridge rgb(40, 38, 37);
+  border: 5px ridge rgb(46, 58, 86);
   border-radius: 10px;
   box-shadow: inset 0 0 0 1px var(--gold-faint), 0 8px 24px rgba(0, 0, 0, 0.45);
   text-align: center;
@@ -123,35 +142,35 @@ main { width: min(880px, 100%); margin: 0 auto; padding: 0 1rem; }
 .searchField { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 0.7rem; }
 .textInputSection { display: flex; flex: 1 1 420px; justify-content: center; align-items: center; gap: 0.6rem; flex-wrap: wrap; }
 label { font-family: var(--display); font-weight: 500; }
-legend { font-family: var(--display); padding: 0 0.6rem; margin-inline: auto; color: var(--gold); }
-legend small { display: block; margin-top: 0.2rem; font: 400 0.9rem var(--display); color: var(--ink); }
+legend { font-family: var(--display); padding: 0 0.6rem; margin-inline: auto; color: var(--silver); }
+legend small { display: flex; flex-wrap: wrap; justify-content: center; margin-top: 0.2rem; font: 400 0.9rem var(--display); color: var(--ink); }
 legend small label { margin: 0 0.5rem; white-space: nowrap; }
 fieldset label { margin: 0 0.7rem; white-space: nowrap; }
-input[type="checkbox"], input[type="radio"] { accent-color: var(--gold); }
+input[type="checkbox"], input[type="radio"] { accent-color: var(--silver); }
 
 input[type="text"], select {
   font: inherit;
   font-size: 0.95rem;
-  color: var(--parchment-ink);
-  background: var(--parchment);
-  border: 1px solid rgb(120, 98, 52);
+  color: var(--vellum-ink);
+  background: var(--vellum);
+  border: 1px solid rgb(92, 108, 142);
   border-radius: 6px;
   padding: 0.4rem 0.6rem;
 }
 input[type="text"] { flex: 1 1 260px; min-width: 0; max-width: 460px; }
-select { background: rgb(213, 210, 205); }
-::placeholder { color: rgb(110, 98, 80); font-style: italic; }
+select { background: rgb(210, 216, 228); }
+::placeholder { color: rgb(102, 110, 130); font-style: italic; }
 
 .smallButton { font-size: 0.7rem; padding: 0.45rem 0.7rem; margin: 0; }
 
 .randomControls {
-  border: 2px outset rgb(30, 29, 28);
-  background: rgba(129, 98, 42, 0.2);
+  border: 2px outset rgb(30, 34, 46);
+  background: rgba(80, 110, 170, 0.2);
   border-radius: 10px;
   padding: 0.3rem 0.9rem;
 }
 .randomControls summary { cursor: pointer; font-style: italic; font-weight: 600; letter-spacing: 0.04em; color: var(--muted); }
-.randomControls[data-expanded="true"] summary { color: var(--gold); }
+.randomControls[data-expanded="true"] summary { color: var(--silver); }
 .rc-content { display: flex; gap: 0.5rem; margin: 0.5rem 0 0.3rem; align-items: center; justify-content: center; }
 
 /* autosuggest: a dropdown that floats over the page rather than pushing content down */
@@ -161,7 +180,7 @@ select { background: rgb(213, 210, 205); }
   position: absolute; top: calc(100% + 4px); left: 0; right: 0; z-index: 30;
   margin: 0; padding: 0.25rem; max-height: 15rem; overflow-y: auto;
   text-align: left;
-  background: rgb(36, 26, 14);
+  background: rgb(18, 24, 42);
   border: 1px solid var(--gold-dim);
   border-radius: 8px;
   box-shadow: 0 14px 30px rgba(0, 0, 0, 0.75), inset 0 0 0 1px var(--gold-faint);
@@ -169,28 +188,31 @@ select { background: rgb(213, 210, 205); }
 }
 .suggestions li { padding: 0.3rem 0.7rem; border-radius: 5px; cursor: pointer; }
 .suggestions li + li { border-top: 1px dotted var(--gold-faint); }
-.suggestions li[aria-selected="true"] { background: rgba(199, 180, 133, 0.18); color: var(--gold); }
+.suggestions li[aria-selected="true"] { background: rgba(199, 180, 133, 0.16); color: var(--gold); }
 
 .selectedParamList { flex-basis: 100%; display: flex; flex-wrap: wrap; justify-content: center; gap: 0.4rem; margin: 0; }
 .selectedParamList:empty { display: none; }
-.selectedParamList li { background: rgba(20, 20, 25, 0.55); border: 1px solid var(--gold); border-radius: 999px; padding: 0.05rem 0.2rem 0.05rem 0.3rem; display: flex; align-items: center; }
+.selectedParamList li { background: rgba(15, 18, 28, 0.55); border: 1px solid var(--gold); border-radius: 999px; padding: 0.05rem 0.2rem 0.05rem 0.3rem; display: flex; align-items: center; }
 .selectedParamList li .chipToggle { color: inherit; font-size: 1rem; padding: 0 0.3rem 0 0.6rem; cursor: pointer; }
-.selectedParamList li .chipToggle:hover:not(:disabled) { color: var(--gold); }
+.selectedParamList li .chipToggle:hover:not(:disabled) { color: var(--silver); }
 .selectedParamList li.negated { border-color: var(--salmon); color: var(--salmon); }
 .selectedParamList li.negated .chipToggle:hover:not(:disabled) { color: var(--ink); }
-.notTag { font: 0.65rem/1 var(--accent); margin-right: 0.4rem; padding: 0.12rem 0.3rem; border: 1px solid currentColor; border-radius: 4px; vertical-align: 0.1em; }
+.notTag { font: 600 0.6rem/1 var(--formal); margin-right: 0.4rem; padding: 0.12rem 0.3rem; border: 1px solid currentColor; border-radius: 4px; vertical-align: 0.1em; }
 .formHint { text-align: center; color: var(--muted); font-style: italic; margin: 0 0 1rem; }
-.selectedParamList li button { font: 1rem/1 "EB Garamond", serif; background: none; border: 0; box-shadow: none; color: var(--muted); padding: 0 0.4rem; }
+.selectedParamList li button {
+  text-transform: none; letter-spacing: 0; font: 1rem/1 "EB Garamond", serif; background: none; border: 0; box-shadow: none; color: var(--muted); padding: 0 0.4rem; }
 .selectedParamList li button:hover:not(:disabled) { color: var(--salmon); filter: none; }
 
 #colorsField, #rarityField { padding-top: 0.4rem; }
-.buttonDiv { display: flex; justify-content: center; gap: 1.2rem; margin: 0.6rem 0 1rem; }
+.buttonDiv { display: flex; flex-wrap: wrap; justify-content: center; gap: 0.8rem 1.2rem; margin: 0.6rem 0 1rem; }
 .buttonDiv button { font-size: 0.95rem; padding: 0.75rem 1.7rem; }
+#resetBtn { background: rgba(15, 18, 28, 0.6); color: var(--ink); border-color: var(--gold-dim); }
+#resetBtn:hover:not(:disabled) { color: var(--gold); }
 
 /* ---------- results: a folio of pages, centered ---------- */
 .results { width: min(1280px, 100%); margin: 0 auto; padding: 0 1rem; }
 .resultsBar, .randomBar { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 0.8rem 1rem; margin: 0 0 1.5rem; text-align: center; }
-.resultsBar > span { font: 400 1.5rem var(--display); color: var(--gold); letter-spacing: 0.05em; flex-basis: 100%; order: -1; }
+.resultsBar > span { text-transform: uppercase; font: 600 1.1rem var(--formal); color: var(--silver); letter-spacing: 0.05em; flex-basis: 100%; order: -1; }
 .resultsBar > span + * , .resultsBar > .buttonLink { order: 0; }
 
 .cardGrid { display: flex; flex-wrap: wrap; justify-content: center; gap: 1.6rem 1.4rem; margin: 0 auto; }
@@ -201,29 +223,28 @@ select { background: rgb(213, 210, 205); }
 .sizeControl { display: inline-flex; align-items: center; gap: 0.7rem; }
 .sizeControl > .muted { font-style: italic; }
 .sizeButtons { display: inline-flex; }
-.sizeButtons button { margin: 0; border-radius: 0; font-size: 0.7rem; padding: 0.4rem 0.8rem; background: rgba(20, 20, 25, 0.6); color: var(--ink); border: 1px solid var(--gold-dim); box-shadow: none; }
+.sizeButtons button { margin: 0; border-radius: 0; font-size: 0.7rem; padding: 0.4rem 0.8rem; background: rgba(15, 18, 28, 0.6); color: var(--ink); border: 1px solid var(--gold-dim); box-shadow: none; }
 .sizeButtons button + button { border-left: 0; }
 .sizeButtons button:first-child { border-radius: 8px 0 0 8px; }
 .sizeButtons button:last-child { border-radius: 0 8px 8px 0; }
-.sizeButtons button[aria-pressed="true"] { background: linear-gradient(180deg, rgb(214, 196, 150), var(--gold)); color: var(--parchment-ink); border-color: rgb(120, 98, 52); }
-.sizeButtons button:hover:not(:disabled) { color: var(--gold); filter: none; }
-.sizeButtons button[aria-pressed="true"]:hover:not(:disabled) { color: var(--parchment-ink); }
+.sizeButtons button[aria-pressed="true"] { background: linear-gradient(180deg, rgb(214, 226, 244), var(--silver)); color: var(--vellum-ink); border-color: rgb(176, 152, 96); }
+.sizeButtons button:hover:not(:disabled) { color: var(--silver); filter: none; }
+.sizeButtons button[aria-pressed="true"]:hover:not(:disabled) { color: var(--vellum-ink); }
 .cardGrid a { display: block; border-radius: 4.5%; transition: transform 0.2s, box-shadow 0.2s; box-shadow: 0 6px 16px rgba(0, 0, 0, 0.65); }
-.cardGrid a:hover, .cardGrid a:focus-visible { transform: translateY(-5px); box-shadow: 0 0 0 2px var(--gold-dim), 0 0 22px rgba(199, 180, 133, 0.35), 0 12px 22px rgba(0, 0, 0, 0.7); }
+.cardGrid a:hover, .cardGrid a:focus-visible { transform: translateY(-5px); box-shadow: 0 0 0 2px var(--gold-dim), 0 0 22px rgba(199, 180, 133, 0.3), 0 12px 22px rgba(0, 0, 0, 0.7); }
 .cardGrid img { display: block; width: 100%; border-radius: 4.5%; background: var(--panel); aspect-ratio: 488 / 680; }
 .caption { margin: 0.45rem 0 0; text-align: center; color: var(--muted); font-style: italic; font-size: 0.9rem; }
 
 /* ---------- card page: an open spellbook ---------- */
 .cardPage { width: min(1120px, 100%); margin: 0 auto; padding: 0 1rem; }
-.cardPage > .buttonLink { display: table; margin: 0 auto 1.4rem; }
 .cardLayout {
   position: relative;
   display: grid;
   grid-template-columns: 1fr 1fr;
   background: var(--leather);
-  border: 10px ridge rgb(52, 36, 18);
+  border: 10px ridge rgb(36, 48, 76);
   border-radius: 8px;
-  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.6), 0 20px 50px rgba(0, 0, 0, 0.7), inset 0 0 40px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 0 0 1px var(--gold-dim), 0 0 0 5px rgba(0, 0, 0, 0.55), 0 0 0 6px var(--gold-faint), 0 20px 50px rgba(0, 0, 0, 0.7), inset 0 0 40px rgba(0, 0, 0, 0.5);
 }
 /* the gutter where the pages meet */
 .cardLayout::before {
@@ -236,30 +257,30 @@ select { background: rgb(213, 210, 205); }
 .cardImages, .cardInfo { padding: 2rem 2.2rem; min-width: 0; }
 .cardImages {
   display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1.2rem;
-  background: linear-gradient(90deg, rgba(75, 56, 28, 0.55), rgba(55, 42, 18, 0.85));
+  background: linear-gradient(90deg, rgba(40, 56, 92, 0.55), rgba(24, 32, 54, 0.85));
 }
 .cardImages img { width: min(100%, 420px); border-radius: 4.5%; aspect-ratio: 488 / 680; background: var(--panel); box-shadow: 0 0 0 2px var(--gold-dim), 0 10px 26px rgba(0, 0, 0, 0.7); }
-.cardInfo { background: linear-gradient(270deg, rgba(75, 56, 28, 0.55), rgba(55, 42, 18, 0.85)); }
+.cardInfo { background: linear-gradient(270deg, rgba(40, 56, 92, 0.55), rgba(24, 32, 54, 0.85)); }
 
 .face { margin-bottom: 1.2rem; padding-bottom: 1rem; border-bottom: 1px solid var(--gold-faint); }
-.face h2 { margin: 0 0 0.9rem; font: 400 2rem/1.15 var(--display); color: var(--gold); text-align: center; }
-.face h2::after { content: "❖"; display: block; margin-top: 0.3rem; font-size: 0.7rem; color: var(--gold-dim); }
+.face h2 { margin: 0 0 0.9rem; font: 600 1.55rem/1.25 var(--formal); letter-spacing: 0.05em; color: var(--silver); text-align: center; }
+.face h2::after { content: "◇"; display: block; margin-top: 0.3rem; font-size: 0.7rem; color: var(--gold); }
 .cardInfo dl { display: grid; grid-template-columns: max-content 1fr; gap: 0.5rem 1.4rem; margin: 0 0 1rem; }
 .cardInfo dt { text-align: right; color: var(--muted); font-style: italic; }
 .cardInfo dd { margin: 0; }
 .cardInfo dd p { margin: 0 0 0.55rem; }
 .cardInfo dd p.flavor { font-style: italic; color: var(--muted); padding-left: 0.8rem; border-left: 2px solid var(--gold-dim); }
 .cardInfo dd p.flavor em { font-style: normal; }
-.cardInfo a { color: var(--gold); }
+.cardInfo a { color: var(--silver); }
 .cardInfo a:hover { color: var(--ink); text-decoration: underline; }
 .mana { width: 0.95em; height: 0.95em; vertical-align: -0.12em; margin: 0 1px; border-radius: 50%; box-shadow: -1px 1px 0 rgba(0, 0, 0, 0.85); }
-.permalink { display: block; text-align: center; margin-top: 1.4rem; color: var(--gold); }
+.permalink { display: block; text-align: center; margin-top: 1.4rem; color: var(--silver); }
 
 /* marginalia: collapsible notes in the page */
-.cardInfo details { margin: 0 0 0.8rem; padding: 0.5rem 0.9rem; background: rgba(20, 20, 25, 0.35); border: 1px solid var(--gold-faint); border-radius: 8px; }
-.cardInfo summary { list-style: none; cursor: pointer; font: 400 1.1rem var(--display); color: var(--gold); }
+.cardInfo details { margin: 0 0 0.8rem; padding: 0.5rem 0.9rem; background: rgba(15, 18, 28, 0.35); border: 1px solid var(--gold-faint); border-radius: 8px; }
+.cardInfo summary { list-style: none; cursor: pointer; font: 400 1.1rem var(--display); color: var(--silver); }
 .cardInfo summary::-webkit-details-marker { display: none; }
-.cardInfo summary::before { content: "❖"; display: inline-block; margin-right: 0.6rem; font-size: 0.75rem; transition: transform 0.2s; }
+.cardInfo summary::before { color: var(--gold); content: "◇"; display: inline-block; margin-right: 0.6rem; font-size: 0.75rem; transition: transform 0.2s; }
 .cardInfo details[data-expanded="true"] > summary::before { transform: rotate(90deg); }
 .collapsibleBody { overflow: hidden; }
 /* legalities / rulings float over the page like the suggestion dropdown */
@@ -268,7 +289,7 @@ select { background: rgb(213, 210, 205); }
   position: absolute; top: calc(100% + 4px); left: 0; right: 0; z-index: 25;
   max-height: min(60vh, 28rem); overflow-y: auto;
   padding: 0.7rem 1rem;
-  background: rgb(36, 26, 14);
+  background: rgb(18, 24, 42);
   border: 1px solid var(--gold-dim);
   border-radius: 8px;
   box-shadow: 0 14px 30px rgba(0, 0, 0, 0.75), inset 0 0 0 1px var(--gold-faint);
@@ -278,8 +299,8 @@ select { background: rgb(213, 210, 205); }
 .overlayPanel .collapsibleBody > :last-child { margin-bottom: 0; }
 .legalities { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 0.35rem 1.4rem; margin: 0.8rem 0 0.2rem; }
 .legalities li { display: flex; justify-content: space-between; gap: 0.5rem; border-bottom: 1px dotted var(--gold-faint); }
-.badge { font-size: 0.8rem; padding: 0 0.55rem; border-radius: 999px; border: 1px solid var(--gold-faint); color: var(--muted); align-self: center; }
-.badge.legal { color: var(--gold); border-color: var(--gold); }
+.badge { font-size: 0.8rem; padding: 0 0.55rem; border-radius: 999px; border: 1px solid var(--silver-faint); color: var(--muted); align-self: center; }
+.badge.legal { color: var(--silver); border-color: var(--silver); }
 .badge.banned { color: var(--salmon); border-color: var(--salmon); }
 .badge.restricted { color: var(--ink); border-color: var(--ink); }
 .rulings { display: grid; gap: 0.9rem; margin: 0.8rem 0 0.2rem; }
@@ -289,9 +310,33 @@ select { background: rgb(213, 210, 205); }
 @media (max-width: 820px) {
   .cardLayout { grid-template-columns: 1fr; }
   .cardLayout::before { display: none; }
-  .cardImages { background: rgba(75, 56, 28, 0.6); padding: 1.5rem 1rem; }
+  .cardImages { background: rgba(40, 56, 92, 0.6); padding: 1.5rem 1rem; }
   .cardInfo { padding: 1.5rem 1.2rem; border-top: 1px solid var(--gold-dim); }
 }
 @media (prefers-reduced-motion: reduce) {
   * { animation: none !important; transition: none !important; }
 }
+
+/* ---- small screens: stack each search row (label, then input + Add) ---- */
+@media (max-width: 640px) {
+  main { padding: 0 0.7rem; }
+  .searchField, fieldset { padding: 0.8rem; }
+  .textInputSection { flex-basis: 100%; }
+  .textInputSection > label { flex-basis: 100%; }
+  .inputWrap { flex: 1 1 0; max-width: none; }
+  .buttonDiv button { padding: 0.7rem 1.1rem; }
+}
+
+.cardLinks { margin: 1.1rem 0 0; text-align: center; color: var(--muted); }
+.cardLinks a { color: var(--gold); }
+.cardLinks a:hover { color: var(--ink); text-decoration: underline; }
+
+/* ---- results toolbar + pagination ---- */
+.resultsTools { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 0.7rem 1.4rem; margin: 0 0 1.4rem; }
+.resultsTools label { display: inline-flex; align-items: center; gap: 0.5rem; }
+.pagination { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 0.35rem; margin: 0 0 1.4rem; }
+.pagination button { margin: 0; padding: 0.4rem 0.75rem; font-size: 0.7rem; background: rgba(15, 18, 28, 0.6); color: var(--ink); border: 1px solid var(--gold-dim); box-shadow: none; }
+.pagination button:hover:not(:disabled) { color: var(--gold); filter: none; }
+.pagination button[aria-current="page"] { background: linear-gradient(180deg, rgb(214, 226, 244), var(--silver)); color: var(--vellum-ink); border-color: rgb(176, 152, 96); }
+.pagination button:disabled { opacity: 0.4; cursor: default; }
+.cardGrid { margin-bottom: 1.4rem; }

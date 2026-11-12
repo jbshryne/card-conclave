@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import BackButton from "../components/BackButton.jsx";
 import CardDetail from "../components/CardDetail.jsx";
+import NewSearchButton from "../components/NewSearchButton.jsx";
 import { getCard } from "../utils/scryfall";
 
 export default function CardPage() {
@@ -23,7 +24,10 @@ export default function CardPage() {
 
   return (
     <section className="cardPage">
-      <BackButton />
+      <div className="randomBar">
+        <BackButton />
+        <NewSearchButton />
+      </div>
       {error && <p className="errorMessage" role="alert">{error}</p>}
       {!card && !error && <p className="loading-message">Loading card…</p>}
       {card && <CardDetail key={card.id} card={card} />}
