@@ -2,8 +2,7 @@ const API = "https://api.scryfall.com";
 const cache = {};
 const cardCache = new Map();
 
-export const seedCards = (cards) =>
-  cards.forEach((c) => cardCache.set(c.id, c));
+export const seedCards = (cards) => cards.forEach((c) => cardCache.set(c.id, c));
 
 async function getJson(url) {
   const res = await fetch(url);
@@ -21,19 +20,11 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 export const catalog = (name) =>
   (cache[name] ??= getJson(`${API}/catalog/${name}`).then((j) => j.data));
 
-export const allSets = () =>
-  (cache.sets ??= getJson(`${API}/sets`).then((j) => j.data));
+export const allSets = () => (cache.sets ??= getJson(`${API}/sets`).then((j) => j.data));
 
 // Fetches every page (up to `max` cards) so client-side sorting sees the full set.
 // unique: "cards" (one result per card) or "prints" (every printing / art variant)
-export async function searchAll(
-  query,
-  order,
-  onProgress,
-  max = 1000,
-  unique = "cards",
-  dir = "asc",
-) {
+export async function searchAll(query, order, onProgress, max = 1000, unique = "cards", dir = "asc") {
   let url = `${API}/cards/search?q=${encodeURIComponent(query)}&order=${order}&dir=${dir}&unique=${unique}`;
   const cards = [];
   try {
@@ -82,10 +73,7 @@ export async function getCardsById(ids) {
     try {
       const res = await fetch(`${API}/cards/collection`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
-        },
+        headers: { "Content-Type": "application/json", Accept: "application/json" },
         body: JSON.stringify({ identifiers: chunk.map((id) => ({ id })) }),
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -104,5 +92,29 @@ export async function getCardsById(ids) {
   return ids.map((id) => found.get(id)).filter(Boolean);
 }
 
-export const getRulings = (id) =>
-  getJson(`${API}/cards/${id}/rulings`).then((j) => j.data);
+// Every printing of a card (newest first) via its prints_search_uri. Cached, since all of a
+// card's printings share one URI, so moving between them doesn't re-fetch the list.
+const printsCache = new Map();
+export function getPrints(card, max = 1000) {
+  const url0 = card.prints_search_uri;
+  if (!url0) return Promise.resolve([]);
+  if (!printsCache.has(url0)) {
+    const load = (async () => {
+      const prints = [];
+      let url = url0;
+      while (url && prints.length < max) {
+        const page = await getJson(url);
+        prints.push(...page.data);
+        url = page.has_more ? page.next_page : null;
+        if (url) await wait(100);
+      }
+      seedCards(prints); // so their detail pages open instantly
+      return prints;
+    })();
+    load.catch(() => printsCache.delete(url0)); // let a failed load be retried
+    printsCache.set(url0, load);
+  }
+  return printsCache.get(url0);
+}
+
+export const getRulings = (id) => getJson(`${API}/cards/${id}/rulings`).then((j) => j.data);

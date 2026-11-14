@@ -2,8 +2,12 @@ import { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import SearchForm from "../components/SearchForm.jsx";
 import { buildQuery } from "../utils/buildQuery";
-import { emptyState, paramsToState, stateToParams } from "../utils/searchParams";
-import { clearDraft, loadDraft, saveDraft } from "../utils/draft";
+import {
+  emptyState,
+  paramsToState,
+  stateToParams,
+} from "../utils/searchParams";
+import { clearDraft, loadDraft, saveDraft } from "../draft.js";
 
 export default function SearchPage() {
   const navigate = useNavigate();
@@ -20,13 +24,15 @@ export default function SearchPage() {
     return emptyState();
   });
 
-  const go = (path, requireCriteria = true) => (state) => {
-    if (requireCriteria && !buildQuery(state)) {
-      setError("Add at least one search term, color, rarity, or option.");
-      return;
-    }
-    navigate(`${path}?${stateToParams(state)}`);
-  };
+  const go =
+    (path, requireCriteria = true) =>
+    (state) => {
+      if (requireCriteria && !buildQuery(state)) {
+        setError("Add at least one search term, color, rarity, or option.");
+        return;
+      }
+      navigate(`${path}?${stateToParams(state)}`);
+    };
 
   const reset = () => {
     clearDraft();
@@ -39,9 +45,13 @@ export default function SearchPage() {
   return (
     <main id="mainContent">
       <p className="formHint">
-        Start a term with <b>-</b> to exclude it, or click any chip to switch it to NOT. Whatever you have typed in
-        a box is included in your search, even if you haven&rsquo;t added it to the list. Use <b>Add to list</b> (or
-        press Enter) when you want several terms in the same field.
+        Search by using any or all of the fields below. Click on{" "}
+        <b>Add To List</b> (or press Enter) when you want several terms in the
+        same field.
+      </p>
+      <p className="formHint">
+        Start a term with <b>-</b> to exclude it, or click any chip to switch it
+        to NOT.
       </p>
       <SearchForm
         key={formKey}
@@ -51,7 +61,11 @@ export default function SearchPage() {
         onDraft={(state) => saveDraft(stateToParams(state))}
         onReset={reset}
       />
-      {error && <p className="errorMessage" role="alert">{error}</p>}
+      {error && (
+        <p className="errorMessage" role="alert">
+          {error}
+        </p>
+      )}
     </main>
   );
 }

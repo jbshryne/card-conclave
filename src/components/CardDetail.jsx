@@ -2,8 +2,8 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import ManaText from "./ManaText.jsx";
 import Collapsible from "./Collapsible.jsx";
-import { isNonCard } from "../utils/cards";
-import { getRulings } from "../utils/scryfall";
+import { isNonCard, oracleId } from "../utils/cards";
+import { getPrints, getRulings } from "../utils/scryfall";
 
 const FORMAT_NAMES = {
   paupercommander: "Pauper Commander", standardbrawl: "Standard Brawl",
@@ -12,6 +12,19 @@ const FORMAT_NAMES = {
 const formatName = (f) => FORMAT_NAMES[f] ?? f.charAt(0).toUpperCase() + f.slice(1);
 const STATUS = { legal: "Legal", not_legal: "Not legal", banned: "Banned", restricted: "Restricted" };
 const cap = (s) => s.charAt(0).toUpperCase() + s.slice(1);
+
+// Short notes shown beside each printing: year plus any notable treatment
+const printNotes = (p) =>
+  [
+    p.released_at?.slice(0, 4),
+    p.promo && "Promo",
+    p.border_color === "borderless" && "Borderless",
+    p.full_art && "Full art",
+    p.frame_effects?.includes("showcase") && "Showcase",
+    p.frame_effects?.includes("extendedart") && "Extended art",
+  ]
+    .filter(Boolean)
+    .join(" · ");
 
 function Row({ label, children }) {
   if (!children) return null;
@@ -36,6 +49,7 @@ function FlavorText({ text }) {
 
 export default function CardDetail({ card }) {
   const [rulings, setRulings] = useState(null);
+  const [prints, setPrints] = useState(null);
 
   useEffect(() => {
     document.title = `${card.name} – Chancery Archives`;
@@ -55,6 +69,18 @@ export default function CardDetail({ card }) {
       cancelled = true;
     };
   }, [card.id]);
+
+  useEffect(() => {
+    let cancelled = false;
+    setPrints(null);
+    getPrints(card)
+      .then((p) => !cancelled && setPrints(p))
+      .catch(() => !cancelled && setPrints([]));
+    return () => {
+      cancelled = true;
+    };
+  }, [card.id]);
+  const otherPrints = prints?.filter((p) => p.id !== card.id) ?? [];
 
   const images = card.image_uris
     ? [card.image_uris.normal]
@@ -101,6 +127,40 @@ export default function CardDetail({ card }) {
           </Row>
         </dl>
 
+        {otherPrints.length > 0 && (
+          <Collapsible overlay className="overlayPanel" summary={`Other printings (${otherPrints.length})`}>
+            <ul className="printList">
+              <li className="viewAll">
+                <Link
+                  to={{
+                    pathname: "/results",
+                    search: `?${new URLSearchParams({
+                      oracle: oracleId(card) ?? "",
+                      prints: "1",
+                      sort: "released",
+                      dir: "desc",
+                      label: card.name,
+                    })}`,
+                  }}
+                >
+                  <span>View all printings</span>
+                  <span className="meta">{prints.length}</span>
+                </Link>
+              </li>
+              {otherPrints.map((p) => (
+                <li key={p.id}>
+                  <Link to={`/card/${p.id}`}>
+                    <span>
+                      {p.set_name} <span className="meta">({p.set.toUpperCase()} #{p.collector_number})</span>
+                    </span>
+                    <span className="meta">{printNotes(p)}</span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </Collapsible>
+        )}
+
         {!isNonCard(card) && (
           <>
           <Collapsible overlay className="overlayPanel" summary="Format legalities">
@@ -114,18 +174,18 @@ export default function CardDetail({ card }) {
             </ul>
           </Collapsible>
 
-          <Collapsible overlay className="overlayPanel" summary={`Rulings${rulings ? ` (${rulings.length})` : ""}`}>
-            {!rulings && <p className="muted">Loading rulings…</p>}
-            {rulings?.length === 0 && <p className="muted">No rulings for this card.</p>}
-            <ul className="rulings">
-              {rulings?.map((r, i) => (
-                <li key={i}>
-                  <time dateTime={r.published_at}>{r.published_at}</time>
-                  <p><ManaText text={r.comment} /></p>
-                </li>
-              ))}
-            </ul>
-          </Collapsible>
+          {rulings?.length > 0 && (
+            <Collapsible overlay className="overlayPanel" summary={`Rulings (${rulings.length})`}>
+              <ul className="rulings">
+                {rulings.map((r, i) => (
+                  <li key={i}>
+                    <time dateTime={r.published_at}>{r.published_at}</time>
+                    <p><ManaText text={r.comment} /></p>
+                  </li>
+                ))}
+              </ul>
+            </Collapsible>
+          )}
           </>
         )}
 

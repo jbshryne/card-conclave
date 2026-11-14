@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { searchAll } from "../utils/scryfall";
-import { sortHandler } from "../utils/sortHandler";
+import { sortByType } from "../utils/sortHandler";
 import { buildQuery } from "../utils/buildQuery";
 import { paramsToState } from "../utils/searchParams";
 import { cardImage, cardPath } from "../utils/cards";
@@ -11,6 +11,7 @@ import { SORTS } from "../data/sorts";
 import SizeControl from "../components/SizeControl.jsx";
 import NewSearchButton from "../components/NewSearchButton.jsx";
 import Pagination from "../components/Pagination.jsx";
+import BackButton from "../components/BackButton.jsx";
 
 const MAX_CARDS = 1000;
 const resultsCache = new Map(); // so "Back" from a card page doesn't re-run the search
@@ -29,6 +30,12 @@ export default function ResultsPage() {
   const search = useMemo(() => paramsToState(new URLSearchParams(searchKey)), [searchKey]);
   const page = Math.max(1, parseInt(params.get("page"), 10) || 1);
 
+  // "All printings of <card>" links carry oracle=<id>&prints=1&label=<name> instead of form fields
+  const extra = useMemo(() => {
+    const p = new URLSearchParams(searchKey);
+    return { oracle: p.get("oracle"), prints: p.get("prints") === "1", label: p.get("label") };
+  }, [searchKey]);
+
   const [result, setResult] = useState(() => resultsCache.get(searchKey) ?? null); // { cards, total }
   const [progress, setProgress] = useState("Searching…");
   const [error, setError] = useState("");
@@ -40,7 +47,13 @@ export default function ResultsPage() {
       return;
     }
     let cancelled = false;
-    const query = buildQuery(search);
+    if (extra.oracle && !/^[0-9a-f-]{36}$/i.test(extra.oracle)) {
+      setResult(null);
+      setError("That card reference isn't valid.");
+      return;
+    }
+    const base = buildQuery(search);
+    const query = extra.oracle ? [base, `oracleid:${extra.oracle}`, "include:extras"].filter(Boolean).join(" ") : base;
     setResult(null);
     setError("");
     if (!query) {
@@ -59,13 +72,13 @@ export default function ResultsPage() {
         if (!cancelled) setProgress(`Loaded ${n} of ${t} cards…`);
       },
       MAX_CARDS,
-      "cards",
+      extra.prints ? "prints" : "cards",
       typeSort ? "asc" : search.dir
     )
       .then((cards) => {
         if (cancelled) return;
         if (typeSort) {
-          cards = sortHandler(cards, "type_line", "rarity", "color_identity");
+          cards = sortByType(cards);
           if (search.dir === "desc") cards.reverse();
         }
         const value = { cards, total: Math.max(total, cards.length) };
@@ -76,7 +89,7 @@ export default function ResultsPage() {
     return () => {
       cancelled = true;
     };
-  }, [searchKey, search]);
+  }, [searchKey, search, extra]);
 
   const cards = result?.cards ?? null;
   const pages = cards ? Math.max(1, Math.ceil(cards.length / perPage)) : 1;
@@ -99,11 +112,17 @@ export default function ResultsPage() {
   return (
     <section className="results">
       <div className="resultsBar">
-        <Link className="buttonLink" to={{ pathname: "/", search: `?${searchKey}` }}>Edit search</Link>
+        {extra.oracle ? (
+          <BackButton />
+        ) : (
+          <Link className="buttonLink" to={{ pathname: "/", search: `?${searchKey}` }}>Edit search</Link>
+        )}
         <NewSearchButton />
         {cards && (
           <span>
-            {result.total > cards.length
+            {extra.oracle
+              ? `All printings of ${extra.label ?? "this card"} (${cards.length.toLocaleString()})`
+              : result.total > cards.length
               ? `First ${cards.length.toLocaleString()} of ${result.total.toLocaleString()} cards`
               : `${cards.length.toLocaleString()} cards`}
           </span>
@@ -154,9 +173,12 @@ export default function ResultsPage() {
           <ul className="cardGrid" data-size={sizeKey} style={{ "--card-w": `${size.width}px` }}>
             {visible.map((card) => (
               <li key={card.id}>
-                <Link to={cardPath(card)}>
+                <Link to={extra.prints ? `/card/${card.id}` : cardPath(card)}>
                   <img src={cardImage(card, size.image)} alt={card.name} loading="lazy" />
                 </Link>
+                {extra.prints && (
+                  <p className="caption">{card.set_name} ({card.set.toUpperCase()} #{card.collector_number})</p>
+                )}
               </li>
             ))}
           </ul>
