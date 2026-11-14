@@ -10,3 +10,11 @@ export const cardPath = (card) =>
   isBasicLand(card)
     ? `/basics/${card.set}/${encodeURIComponent(card.name)}`
     : `/card/${card.id}`;
+
+// Reversible cards keep oracle_id on their faces instead of the card itself
+export const oracleId = (card) => card.oracle_id ?? card.card_faces?.[0]?.oracle_id;
+
+// Tokens, emblems and art cards, as opposed to real cards. `component` is the all_parts role, if known.
+const NON_CARD_LAYOUTS = new Set(["token", "double_faced_token", "emblem", "art_series"]);
+export const isNonCard = (card, component) =>
+  NON_CARD_LAYOUTS.has(card.layout) || component === "token" || /^(Token|Emblem)\b/.test(card.type_line ?? "");

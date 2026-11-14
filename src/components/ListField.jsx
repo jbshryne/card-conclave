@@ -6,10 +6,10 @@ import Collapsible from "./Collapsible.jsx";
 // onAdd receives either a string (typed) or an {label, value} item (suggestion/random).
 // onRandom(category) must resolve to an {label, value} item.
 export default function ListField({
-  id, label, placeholder, items, onAdd, onRemove, onToggle,
+  id, label, placeholder, items, onAdd, onRemove, onToggle, text, onTextChange,
   randomOptions, onRandom, suggest,
 }) {
-  const [text, setText] = useState("");
+  const setText = onTextChange; // the typed text is owned by the form, which includes it when you search
   const [pick, setPick] = useState(randomOptions?.[0]?.value);
   const [focused, setFocused] = useState(false);
   const [dismissed, setDismissed] = useState(false);

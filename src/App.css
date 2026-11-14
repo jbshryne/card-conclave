@@ -190,15 +190,15 @@ select { background: rgb(210, 216, 228); }
 .suggestions li + li { border-top: 1px dotted var(--gold-faint); }
 .suggestions li[aria-selected="true"] { background: rgba(199, 180, 133, 0.16); color: var(--gold); }
 
-.selectedParamList { flex-basis: 100%; display: flex; flex-wrap: wrap; justify-content: center; gap: 0.4rem; margin: 0; }
+.selectedParamList { flex-basis: 100%; display: flex; flex-wrap: wrap; justify-content: flex-start; gap: 0.4rem; margin: 0; }
 .selectedParamList:empty { display: none; }
-.selectedParamList li { background: rgba(15, 18, 28, 0.55); border: 1px solid var(--gold); border-radius: 999px; padding: 0.05rem 0.2rem 0.05rem 0.3rem; display: flex; align-items: center; }
+.selectedParamList li { background: rgba(15, 18, 28, 0.55); border: 1px solid var(--gold); border-radius: 999px; padding: 0.2rem 0.2rem 0.2rem 0.3rem; display: flex; align-items: center; }
 .selectedParamList li .chipToggle { color: inherit; font-size: 1rem; padding: 0 0.3rem 0 0.6rem; cursor: pointer; }
 .selectedParamList li .chipToggle:hover:not(:disabled) { color: var(--silver); }
 .selectedParamList li.negated { border-color: var(--salmon); color: var(--salmon); }
 .selectedParamList li.negated .chipToggle:hover:not(:disabled) { color: var(--ink); }
 .notTag { font: 600 0.6rem/1 var(--formal); margin-right: 0.4rem; padding: 0.12rem 0.3rem; border: 1px solid currentColor; border-radius: 4px; vertical-align: 0.1em; }
-.formHint { text-align: center; color: var(--muted); font-style: italic; margin: 0 0 1rem; }
+.formHint { max-width: 72ch; margin: 0 auto 1rem; text-align: center; color: var(--muted); font-style: italic; font-size: 0.9em; line-height: 1.45; }
 .selectedParamList li button {
   text-transform: none; letter-spacing: 0; font: 1rem/1 "EB Garamond", serif; background: none; border: 0; box-shadow: none; color: var(--muted); padding: 0 0.4rem; }
 .selectedParamList li button:hover:not(:disabled) { color: var(--salmon); filter: none; }
@@ -340,3 +340,11 @@ select { background: rgb(210, 216, 228); }
 .pagination button[aria-current="page"] { background: linear-gradient(180deg, rgb(214, 226, 244), var(--silver)); color: var(--vellum-ink); border-color: rgb(176, 152, 96); }
 .pagination button:disabled { opacity: 0.4; cursor: default; }
 .cardGrid { margin-bottom: 1.4rem; }
+
+/* ---- related objects page ---- */
+.pageTitle { margin: 0 0 1.4rem; text-align: center; font: 600 1.3rem/1.3 var(--formal); letter-spacing: 0.1em; color: var(--silver); }
+.relatedLink { margin: 1.2rem 0 0; text-align: center; }
+
+/* .cardInfo a (silver link text) was overriding the button's dark text */
+.cardInfo a.buttonLink,
+.cardInfo a.buttonLink:hover { color: var(--vellum-ink); text-decoration: none; }

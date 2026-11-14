@@ -39,7 +39,9 @@ export default function SearchPage() {
   return (
     <main id="mainContent">
       <p className="formHint">
-        Start a term with <b>-</b> to exclude it, or click any chip to switch it to NOT.
+        Start a term with <b>-</b> to exclude it, or click any chip to switch it to NOT. Whatever you have typed in
+        a box is included in your search, even if you haven&rsquo;t added it to the list. Use <b>Add to list</b> (or
+        press Enter) when you want several terms in the same field.
       </p>
       <SearchForm
         key={formKey}

@@ -4,6 +4,7 @@ import ResultsPage from "./pages/ResultsPage.jsx";
 import CardPage from "./pages/CardPage.jsx";
 import RandomPage from "./pages/RandomPage.jsx";
 import BasicLandsPage from "./pages/BasicLandsPage.jsx";
+import RelatedPage from "./pages/RelatedPage.jsx";
 
 function Layout() {
   const year = new Date().getFullYear();
@@ -40,6 +41,7 @@ export default function App() {
         <Route path="/random" element={<RandomPage />} />
         <Route path="/card/:id" element={<CardPage />} />
         <Route path="/basics/:set/:name" element={<BasicLandsPage />} />
+        <Route path="/related/:id" element={<RelatedPage />} />
         <Route path="*" element={<p className="errorMessage">Page not found. <Link to="/">Back to search</Link></p>} />
       </Route>
     </Routes>

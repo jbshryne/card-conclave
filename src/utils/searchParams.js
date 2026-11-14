@@ -1,6 +1,6 @@
 // Converts the search form's state to and from URL query params, so every
 // search has a shareable URL like /results?type=elf&colors=g&sort=type
-export const LIST_KEYS = ["name", "type", "rules", "set", "watermark", "art", "function"];
+export const LIST_KEYS = ["name", "type", "rules", "set", "watermark", "artist", "art", "function"];
 export const SORT_KEYS = ["name", "type", "color", "cmc", "power", "toughness", "rarity", "released", "set"];
 const COLOR_OPS = ["and", "or", "not", "id"];
 

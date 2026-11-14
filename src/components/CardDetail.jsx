@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import ManaText from "./ManaText.jsx";
 import Collapsible from "./Collapsible.jsx";
+import { isNonCard } from "../utils/cards";
 import { getRulings } from "../utils/scryfall";
 
 const FORMAT_NAMES = {
@@ -44,6 +45,7 @@ export default function CardDetail({ card }) {
   }, [card.name]);
 
   useEffect(() => {
+    if (isNonCard(card)) return; // tokens and emblems have no rulings
     let cancelled = false;
     setRulings(null);
     getRulings(card.id)
@@ -72,16 +74,18 @@ export default function CardDetail({ card }) {
           <div className="face" key={face.name}>
             <h2>{face.name}</h2>
             <dl>
-              <Row label="Mana cost"><ManaText text={face.mana_cost} /></Row>
+              {face.mana_cost && <Row label="Mana cost"><ManaText text={face.mana_cost} /></Row>}
               <Row label="Type">{face.type_line}</Row>
               {face === card && <Row label="Rarity">{cap(card.rarity)}</Row>}
               <Row label="Power / Toughness">{face.power && `${face.power}/${face.toughness}`}</Row>
               <Row label="Loyalty">{face.loyalty}</Row>
-              <Row label="Oracle text">
-                {face.oracle_text?.split("\n").map((line, i) => (
-                  <p key={i}><ManaText text={line} /></p>
-                ))}
-              </Row>
+              {face.oracle_text && (
+                <Row label="Oracle text">
+                  {face.oracle_text.split("\n").map((line, i) => (
+                    <p key={i}><ManaText text={line} /></p>
+                  ))}
+                </Row>
+              )}
               <Row label="Flavor text">{face.flavor_text && <FlavorText text={face.flavor_text} />}</Row>
               {faces.length > 1 && <Row label="Artist">{face.artist}</Row>}
             </dl>
@@ -97,29 +101,39 @@ export default function CardDetail({ card }) {
           </Row>
         </dl>
 
-        <Collapsible overlay className="overlayPanel" summary="Format legalities">
-          <ul className="legalities">
-            {Object.entries(card.legalities).map(([format, status]) => (
-              <li key={format}>
-                <span>{formatName(format)}</span>
-                <span className={`badge ${status}`}>{STATUS[status] ?? status}</span>
-              </li>
-            ))}
-          </ul>
-        </Collapsible>
+        {!isNonCard(card) && (
+          <>
+          <Collapsible overlay className="overlayPanel" summary="Format legalities">
+            <ul className="legalities">
+              {Object.entries(card.legalities).map(([format, status]) => (
+                <li key={format}>
+                  <span>{formatName(format)}</span>
+                  <span className={`badge ${status}`}>{STATUS[status] ?? status}</span>
+                </li>
+              ))}
+            </ul>
+          </Collapsible>
 
-        <Collapsible overlay className="overlayPanel" summary={`Rulings${rulings ? ` (${rulings.length})` : ""}`}>
-          {!rulings && <p className="muted">Loading rulings…</p>}
-          {rulings?.length === 0 && <p className="muted">No rulings for this card.</p>}
-          <ul className="rulings">
-            {rulings?.map((r, i) => (
-              <li key={i}>
-                <time dateTime={r.published_at}>{r.published_at}</time>
-                <p><ManaText text={r.comment} /></p>
-              </li>
-            ))}
-          </ul>
-        </Collapsible>
+          <Collapsible overlay className="overlayPanel" summary={`Rulings${rulings ? ` (${rulings.length})` : ""}`}>
+            {!rulings && <p className="muted">Loading rulings…</p>}
+            {rulings?.length === 0 && <p className="muted">No rulings for this card.</p>}
+            <ul className="rulings">
+              {rulings?.map((r, i) => (
+                <li key={i}>
+                  <time dateTime={r.published_at}>{r.published_at}</time>
+                  <p><ManaText text={r.comment} /></p>
+                </li>
+              ))}
+            </ul>
+          </Collapsible>
+          </>
+        )}
+
+        {!isNonCard(card) && card.all_parts?.some((p) => p.id !== card.id) && (
+          <p className="relatedLink">
+            <Link className="buttonLink" to={`/related/${card.id}`}>Related objects</Link>
+          </p>
+        )}
 
         <p className="cardLinks">
           <a href={card.scryfall_uri} target="_blank" rel="noreferrer">View on Scryfall</a>

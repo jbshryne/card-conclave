@@ -2,7 +2,8 @@ import { useEffect, useMemo, useState } from "react";
 import ListField from "./ListField.jsx";
 import { allSets, catalog } from "../utils/scryfall";
 import { loadTags, searchTags, randomTag } from "../utils/tags";
-import { parseNegation } from "../utils/searchParams";
+import { LIST_KEYS, parseNegation } from "../utils/searchParams";
+import { SORTS } from "../data/sorts";
 import { searchNames, randomName, randomWord, NAME_RANDOM_OPTIONS } from "../utils/names";
 import {
   TYPE_OPTIONS, RULES_OPTIONS, SET_OPTIONS,
@@ -14,6 +15,7 @@ const COLORS = [["w", "White"], ["u", "Blue"], ["b", "Black"], ["r", "Red"], ["g
 const COLOR_OPS = [["and", "Exactly"], ["or", "Including"], ["not", "Excluding"], ["id", "Identity (EDH)"]];
 const RARITIES = [["c", "Common"], ["u", "Uncommon"], ["r", "Rare"], ["m", "Mythic Rare"]];
 
+const emptyPending = () => Object.fromEntries(LIST_KEYS.map((k) => [k, ""]));
 const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
 const asItem = (v) => (typeof v === "string" ? { label: v, value: v } : v);
 const toggle = (set, v) => {
@@ -29,10 +31,13 @@ export default function SearchForm({ initial, onSearch, onRandomCard, onDraft, o
   const [colorOp, setColorOp] = useState(initial.colorOp);
   const [rarities, setRarities] = useState(initial.rarities);
   const [options, setOptions] = useState(initial.options);
-  const { sort, dir } = initial; // sorting is chosen on the results page; carried along unchanged
+  const [sort, setSort] = useState(initial.sort);
+  const [dir, setDir] = useState(initial.dir);
+  const [pending, setPending] = useState(emptyPending); // text typed in a box but not yet added as a chip
   const [typeNames, setTypeNames] = useState([]);
   const [sets, setSets] = useState([]);
   const [cardNames, setCardNames] = useState([]);
+  const [artistNames, setArtistNames] = useState([]);
   const [watermarks, setWatermarks] = useState([]);
   const [artTags, setArtTags] = useState([]);
   const [functionTags, setFunctionTags] = useState([]);
@@ -42,12 +47,14 @@ export default function SearchForm({ initial, onSearch, onRandomCard, onDraft, o
     allTypes().then(setTypeNames).catch(() => {});
     allSets().then(setSets).catch(() => {});
     catalog("card-names").then(setCardNames).catch(() => {});
+    catalog("artist-names").then(setArtistNames).catch(() => {});
     catalog("watermarks").then(setWatermarks).catch(() => {});
     loadTags("art").then(setArtTags);
     loadTags("function").then(setFunctionTags);
   }, []);
 
-  const add = (field, value) => {
+  // Turns typed text (or a picked suggestion) into a chip item
+  const makeItem = (field, value) => {
     let item = asItem(value);
     if (typeof value === "string") {
       const { value: text, negate } = parseNegation(value); // "-elf" adds NOT elf
@@ -63,11 +70,25 @@ export default function SearchForm({ initial, onSearch, onRandomCard, onDraft, o
       const found = sets.find((s) => s.code === q || s.name.toLowerCase() === q);
       if (found) Object.assign(item, setItem(found));
     }
-    setLists((l) =>
-      l[field].some((i) => i.value === item.value && !!i.negate === !!item.negate)
-        ? l
-        : { ...l, [field]: [...l[field], item] }
-    );
+    return item;
+  };
+  const has = (items, item) => items.some((i) => i.value === item.value && !!i.negate === !!item.negate);
+
+  const add = (field, value) => {
+    const item = makeItem(field, value);
+    setLists((l) => (has(l[field], item) ? l : { ...l, [field]: [...l[field], item] }));
+  };
+
+  // Anything typed in a box counts as part of the search, chip or not
+  const listsWithPending = () => {
+    const merged = { ...lists };
+    for (const field of LIST_KEYS) {
+      const typed = pending[field].trim();
+      if (!typed) continue;
+      const item = makeItem(field, typed);
+      if (!has(merged[field], item)) merged[field] = [...merged[field], item];
+    }
+    return merged;
   };
   const remove = (field, index) =>
     setLists((l) => ({ ...l, [field]: l[field].filter((_, i) => i !== index) }));
@@ -93,11 +114,20 @@ export default function SearchForm({ initial, onSearch, onRandomCard, onDraft, o
   // Keep a draft so the form is still filled in when you come back from the results page
   useEffect(() => {
     onDraft?.(state);
-  }, [lists, colors, colorless, colorOp, rarities, options, sort]);
+  }, [lists, colors, colorless, colorOp, rarities, options, sort, dir]);
 
+  // Fold typed-but-unadded text into the chips, remember it for Back, then search
+  const searchWith = (run) => {
+    const merged = listsWithPending();
+    setLists(merged);
+    setPending(emptyPending());
+    const next = { ...state, lists: merged };
+    onDraft?.(next);
+    run(next);
+  };
   const submit = (e) => {
     e.preventDefault();
-    onSearch(state);
+    searchWith(onSearch);
   };
 
   const field = (name, props) => (
@@ -107,6 +137,8 @@ export default function SearchForm({ initial, onSearch, onRandomCard, onDraft, o
       onAdd={(v) => add(name, v)}
       onRemove={(i) => remove(name, i)}
       onToggle={(i) => toggleNegate(name, i)}
+      text={pending[name]}
+      onTextChange={(v) => setPending((p) => ({ ...p, [name]: v }))}
     />
   );
 
@@ -185,6 +217,13 @@ export default function SearchForm({ initial, onSearch, onRandomCard, onDraft, o
         onRandom: async () => pick(await catalog("watermarks")),
       })}
 
+      {field("artist", {
+        id: "artistInput", label: "Artist:", placeholder: "Full or partial artist name",
+        randomOptions: [{ value: "any", label: "Any Artist" }],
+        suggest: (text) => searchNames(artistNames, text, 8, (name) => name),
+        onRandom: async () => pick(await catalog("artist-names")),
+      })}
+
       {field("art", {
         id: "artInput", label: "Art / Concept:", placeholder: "Ex: calamity-beast, squirrel-horde",
         randomOptions: [{ value: "any", label: "Any Art Tag" }],
@@ -210,9 +249,24 @@ export default function SearchForm({ initial, onSearch, onRandomCard, onDraft, o
         )}
       </fieldset>
 
+      <section className="row">
+        <div className="searchField">
+          <label htmlFor="sortDropdown">Sort results by:</label>
+          <select id="sortDropdown" value={sort} onChange={(e) => setSort(e.target.value)}>
+            {SORTS.map(([value, text]) => (
+              <option key={value} value={value}>{text}</option>
+            ))}
+          </select>
+          <select aria-label="Sort direction" value={dir} onChange={(e) => setDir(e.target.value)}>
+            <option value="asc">Ascending</option>
+            <option value="desc">Descending</option>
+          </select>
+        </div>
+      </section>
+
       <div className="buttonDiv">
         <button type="submit" id="allCardsBtn">All Cards</button>
-        <button type="button" id="randomBtn" onClick={() => onRandomCard(state)}>
+        <button type="button" id="randomBtn" onClick={() => searchWith(onRandomCard)}>
           Randomizer!
         </button>
         <button type="button" id="resetBtn" onClick={onReset}>New Search</button>

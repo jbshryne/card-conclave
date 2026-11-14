@@ -11,7 +11,8 @@ export const exactName = (name) => (name.includes('"') ? `!'${name}'` : `!"${nam
 
 // Names that start with what you typed first, then names with a word that starts with it,
 // then names that merely contain it. Shorter names first within each group.
-export function searchNames(names, text, limit = 8) {
+// toValue turns a picked name into the chip's search value (exact-name syntax by default).
+export function searchNames(names, text, limit = 8, toValue = exactName) {
   const q = text.toLowerCase().replace(/"/g, "").trim();
   if (!q) return [];
   const tiers = [[], [], []];
@@ -25,7 +26,7 @@ export function searchNames(names, text, limit = 8) {
   return tiers
     .flatMap((t) => t.sort(order))
     .slice(0, limit)
-    .map((name) => ({ label: name, value: exactName(name) }));
+    .map((name) => ({ label: name, value: toValue(name) }));
 }
 
 const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];

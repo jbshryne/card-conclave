@@ -1,6 +1,7 @@
 // Splits text into words and "quoted phrases", prefixing each with a Scryfall keyword.
 const tokens = (text) => text.match(/"[^"]+"|\S+/g) ?? [];
-const quote = (v) => (/\s/.test(v) ? `"${v}"` : v);
+// quote anything with spaces or quote marks; use single quotes if the value itself contains "
+const quote = (v) => (/[\s'"]/.test(v) ? (v.includes('"') ? `'${v}'` : `"${v}"`) : v);
 const anyOf = (terms) => (terms.length > 1 ? `(${terms.join(" or ")})` : terms[0]);
 
 // name / type / rules: every word must match. A NOT item excludes the whole item,
@@ -55,6 +56,7 @@ export function buildQuery({ lists, colors, colorless, colorOp, rarities, option
   if (rarities.size) parts.push(anyOf([...rarities].map((r) => `r:${r}`)));
   parts.push(...choiceTerms("s", lists.set));
   parts.push(...choiceTerms("wm", lists.watermark));
+  parts.push(...choiceTerms("a", lists.artist ?? [])); // a card has one artist, so several mean "any of"
   parts.push(...tagTerms("art", lists.art));
   parts.push(...tagTerms("function", lists.function));
 
