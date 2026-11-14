@@ -46,7 +46,7 @@ export default function SearchPage() {
     <main id="mainContent">
       <p className="formHint">
         Search by using any or all of the fields below. Click on{" "}
-        <b>Add To List</b> (or press Enter) when you want several terms in the
+        <b>Add To List</b> (or press Enter) if you want several terms in the
         same field.
       </p>
       <p className="formHint">
