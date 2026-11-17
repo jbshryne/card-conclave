@@ -1,5 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 import ListField from "./ListField.jsx";
+import StatField from "./StatField.jsx";
+import Collapsible from "./Collapsible.jsx";
+import { useHiddenSet } from "../utils/useHiddenSet";
+import { normalizeStatValue } from "../utils/stats";
 import { allSets, catalog } from "../utils/scryfall";
 import { loadTags, searchTags, randomTag } from "../utils/tags";
 import { LIST_KEYS, parseNegation } from "../utils/searchParams";
@@ -43,6 +47,14 @@ const RARITIES = [
   ["m", "Mythic Rare"],
 ];
 
+// Fields that can be shown or hidden from the "Customize fields" panel
+const FIELDS = [
+  ["name", "Card Name"], ["type", "Card Types"], ["color", "Color"], ["rules", "Rules Text"],
+  ["rarity", "Rarity"], ["stats", "Stats"], ["set", "Set"], ["watermark", "Watermark"],
+  ["artist", "Artist"], ["art", "Art / Concept"], ["function", "Function / Cycle"],
+  ["options", "Options"], ["sort", "Sort"],
+];
+
 const emptyPending = () => Object.fromEntries(LIST_KEYS.map((k) => [k, ""]));
 const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
 const asItem = (v) => (typeof v === "string" ? { label: v, value: v } : v);
@@ -67,6 +79,10 @@ export default function SearchForm({
   const [options, setOptions] = useState(initial.options);
   const [sort, setSort] = useState(initial.sort);
   const [dir, setDir] = useState(initial.dir);
+  const [stats, setStats] = useState(initial.stats ?? []);
+  const [statDraft, setStatDraft] = useState({ stat: "mv", op: "=", value: "" }); // the stat row's inputs
+  const [statError, setStatError] = useState("");
+  const [hiddenFields, toggleField, showAllFields, hideAllFields] = useHiddenSet("cardConclaveHiddenFields");
   const [pending, setPending] = useState(emptyPending); // text typed in a box but not yet added as a chip
   const [typeNames, setTypeNames] = useState([]);
   const [sets, setSets] = useState([]);
@@ -142,6 +158,20 @@ export default function SearchForm({
     }
     return merged;
   };
+  const hasStat = (items, s) =>
+    items.some((i) => i.stat === s.stat && i.op === s.op && i.value === s.value);
+  const addStat = () => {
+    const value = normalizeStatValue(statDraft.value);
+    if (!value) {
+      setStatError("Enter a number, such as 3 or 2.5.");
+      return;
+    }
+    const item = { stat: statDraft.stat, op: statDraft.op, value };
+    setStats((list) => (hasStat(list, item) ? list : [...list, item]));
+    setStatDraft((d) => ({ ...d, value: "" })); // keep the stat and comparison, handy for adding a range
+    setStatError("");
+  };
+
   const remove = (field, index) =>
     setLists((l) => ({
       ...l,
@@ -181,19 +211,34 @@ export default function SearchForm({
     options,
     sort,
     dir,
+    stats,
   };
 
   // Keep a draft so the form is still filled in when you come back from the results page
   useEffect(() => {
     onDraft?.(state);
-  }, [lists, colors, colorless, colorOp, rarities, options, sort, dir]);
+  }, [lists, colors, colorless, colorOp, rarities, options, sort, dir, stats]);
 
   // Fold typed-but-unadded text into the chips, remember it for Back, then search
   const searchWith = (run) => {
+    // A stat typed in the box but not yet added counts too, as long as it's a number
+    let mergedStats = stats;
+    if (statDraft.value.trim()) {
+      const value = normalizeStatValue(statDraft.value);
+      if (!value) {
+        setStatError("Enter a number, such as 3 or 2.5.");
+        return;
+      }
+      const item = { stat: statDraft.stat, op: statDraft.op, value };
+      if (!hasStat(stats, item)) mergedStats = [...stats, item];
+    }
     const merged = listsWithPending();
     setLists(merged);
+    setStats(mergedStats);
     setPending(emptyPending());
-    const next = { ...state, lists: merged };
+    setStatDraft((d) => ({ ...d, value: "" }));
+    setStatError("");
+    const next = { ...state, lists: merged, stats: mergedStats };
     onDraft?.(next);
     run(next);
   };
@@ -201,6 +246,19 @@ export default function SearchForm({
     e.preventDefault();
     searchWith(onSearch);
   };
+
+  // A field only disappears while it's empty, so a hidden field never quietly affects a search
+  const hasContent = (key) => {
+    switch (key) {
+      case "color": return colors.size > 0 || colorless;
+      case "rarity": return rarities.size > 0;
+      case "stats": return stats.length > 0 || statDraft.value.trim() !== "";
+      case "options": return Object.values(options).some(Boolean);
+      case "sort": return sort !== "type" || dir !== "asc";
+      default: return lists[key].length > 0 || pending[key].trim() !== "";
+    }
+  };
+  const shown = (key) => !hiddenFields.has(key) || hasContent(key);
 
   const field = (name, props) => (
     <ListField
@@ -216,7 +274,42 @@ export default function SearchForm({
 
   return (
     <form autoComplete="off" id="searchForm" onSubmit={submit}>
-      {field("name", {
+      {/* A small square fixed to the top right of the screen; it opens into the options panel */}
+      <Collapsible
+        overlay
+        className="customizeDock"
+        summary={
+          <>
+            <span className="dockIcon" title="Customize fields" aria-hidden="true" />
+            <span className="srOnly">Customize fields</span>
+          </>
+        }
+      >
+        <p className="dockTitle">Customize fields</p>
+        <div className="fieldToggles">
+          {FIELDS.map(([key, text]) => (
+            <label key={key}>
+              <input type="checkbox" checked={!hiddenFields.has(key)} onChange={() => toggleField(key)} /> {text}
+              {hiddenFields.has(key) && hasContent(key) && <span className="inUse"> (in use)</span>}
+            </label>
+          ))}
+        </div>
+        <p className="toggleNote">
+          Unchecked fields stay hidden on your next visit. A field with something in it stays visible until you clear it.
+        </p>
+        <div className="panelTools dockTools">
+          <button type="button" className="linkButton" onClick={showAllFields}>Show all</button>
+          <button
+            type="button"
+            className="linkButton"
+            onClick={() => hideAllFields(FIELDS.map(([key]) => key))}
+          >
+            Clear all
+          </button>
+        </div>
+      </Collapsible>
+
+      {shown("name") && field("name", {
         id: "nameInput",
         label: "Card Name:",
         placeholder: "Words can be full or partial",
@@ -228,7 +321,7 @@ export default function SearchForm({
             : randomName(await catalog("card-names")),
       })}
 
-      {field("type", {
+      {shown("type") && field("type", {
         id: "typeInput",
         label: "Card Types:",
         placeholder: "Including super- and/or subtypes",
@@ -237,6 +330,7 @@ export default function SearchForm({
         onRandom: async (key) => pick(await typePool(key)),
       })}
 
+      {shown("color") && (
       <fieldset id="colorsField">
         <legend>
           Color:
@@ -280,8 +374,9 @@ export default function SearchForm({
           Colorless
         </label>
       </fieldset>
+      )}
 
-      {field("rules", {
+      {shown("rules") && field("rules", {
         id: "rulesTextInput",
         label: "Rules Text:",
         placeholder: 'Individual words or "phrases in quotes"',
@@ -289,6 +384,7 @@ export default function SearchForm({
         onRandom: async (key) => pick(await rulesPool(key)),
       })}
 
+      {shown("rarity") && (
       <fieldset id="rarityField">
         <legend>Rarity:</legend>
         {RARITIES.map(([value, text]) => (
@@ -302,8 +398,21 @@ export default function SearchForm({
           </label>
         ))}
       </fieldset>
+      )}
 
-      {field("set", {
+      {shown("stats") && <StatField
+        items={stats}
+        draft={statDraft}
+        onDraftChange={(patch) => {
+          setStatDraft((d) => ({ ...d, ...patch }));
+          setStatError("");
+        }}
+        onAdd={addStat}
+        onRemove={(i) => setStats((list) => list.filter((_, j) => j !== i))}
+        error={statError}
+      />}
+
+      {shown("set") && field("set", {
         id: "setInput",
         label: "Set:",
         placeholder: "Search for full name or set code",
@@ -312,7 +421,7 @@ export default function SearchForm({
         onRandom: async (key) => pick(await setPool(key)),
       })}
 
-      {field("watermark", {
+      {shown("watermark") && field("watermark", {
         id: "watermarkInput",
         label: "Watermark:",
         placeholder: "Ex. Abzan, Desparked",
@@ -324,7 +433,7 @@ export default function SearchForm({
         onRandom: async () => pick(await catalog("watermarks")),
       })}
 
-      {field("artist", {
+      {shown("artist") && field("artist", {
         id: "artistInput",
         label: "Artist:",
         placeholder: "Full or partial artist name",
@@ -333,7 +442,7 @@ export default function SearchForm({
         onRandom: async () => pick(await catalog("artist-names")),
       })}
 
-      {field("art", {
+      {shown("art") && field("art", {
         id: "artInput",
         label: "Art / Concept:",
         placeholder: "Ex: calamity beast, squirrel horde",
@@ -343,7 +452,7 @@ export default function SearchForm({
           randomTag(await loadTags("art")) ?? pick(ART_TAGS),
       })}
 
-      {field("function", {
+      {shown("function") && field("function", {
         id: "functionInput",
         label: "Function / Cycle:",
         placeholder: "Ex: lifegain matters, cycle-m15-sliver",
@@ -353,6 +462,7 @@ export default function SearchForm({
           randomTag(await loadTags("function")) ?? pick(FUNCTION_TAGS),
       })}
 
+      {shown("options") && (
       <fieldset>
         <legend>Options:</legend>
         {[
@@ -372,7 +482,9 @@ export default function SearchForm({
           </label>
         ))}
       </fieldset>
+      )}
 
+      {shown("sort") && (
       <section className="row">
         <div className="searchField">
           <label htmlFor="sortDropdown">Sort results by:</label>
@@ -397,6 +509,7 @@ export default function SearchForm({
           </select>
         </div>
       </section>
+      )}
 
       <div className="buttonDiv">
         <button type="submit" id="allCardsBtn">

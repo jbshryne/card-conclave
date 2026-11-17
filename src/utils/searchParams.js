@@ -1,5 +1,7 @@
 // Converts the search form's state to and from URL query params, so every
 // search has a shareable URL like /results?type=elf&colors=g&sort=type
+import { parseStat, statToParam } from "./stats.js";
+
 export const LIST_KEYS = ["name", "type", "rules", "set", "watermark", "artist", "art", "function"];
 export const SORT_KEYS = ["name", "type", "color", "cmc", "power", "toughness", "rarity", "released", "set"];
 const COLOR_OPS = ["and", "or", "not", "id"];
@@ -20,6 +22,7 @@ export const emptyState = () => ({
   options: { firstPrintings: false, includeExtras: false, isFunny: false },
   sort: "type",
   dir: "asc",
+  stats: [], // numeric stat comparisons: { stat: "mv", op: ">=", value: "3" }
 });
 
 export function stateToParams(s) {
@@ -32,6 +35,7 @@ export function stateToParams(s) {
   if (s.options.firstPrintings) p.set("first", "1");
   if (s.options.includeExtras) p.set("extras", "1");
   if (s.options.isFunny) p.set("funny", "1");
+  (s.stats ?? []).forEach((st) => p.append("stat", statToParam(st)));
   p.set("sort", s.sort);
   if (s.dir === "desc") p.set("dir", "desc");
   return p;
@@ -59,5 +63,6 @@ export function paramsToState(p) {
   };
   if (SORT_KEYS.includes(p.get("sort"))) s.sort = p.get("sort");
   s.dir = p.get("dir") === "desc" ? "desc" : "asc";
+  s.stats = p.getAll("stat").map(parseStat).filter(Boolean);
   return s;
 }

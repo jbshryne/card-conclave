@@ -36,7 +36,7 @@ function choiceTerms(prefix, items) {
 const tagTerms = (prefix, items) =>
   items.map((i) => `${i.negate ? "-" : ""}${prefix}:${quote(i.value)}`);
 
-export function buildQuery({ lists, colors, colorless, colorOp, rarities, options }) {
+export function buildQuery({ lists, colors, colorless, colorOp, rarities, options, stats = [] }) {
   const parts = [
     ...nameTerms(lists.name),
     ...textTerms("t", lists.type),
@@ -54,6 +54,7 @@ export function buildQuery({ lists, colors, colorless, colorOp, rarities, option
   }
 
   if (rarities.size) parts.push(anyOf([...rarities].map((r) => `r:${r}`)));
+  parts.push(...stats.map((s) => `${s.stat}${s.op}${s.value}`)); // e.g. mv>=3 pow<2 tou!=4 loy>5
   parts.push(...choiceTerms("s", lists.set));
   parts.push(...choiceTerms("wm", lists.watermark));
   parts.push(...choiceTerms("a", lists.artist ?? [])); // a card has one artist, so several mean "any of"

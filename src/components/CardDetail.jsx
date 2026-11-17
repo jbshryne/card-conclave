@@ -2,15 +2,10 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import ManaText from "./ManaText.jsx";
 import Collapsible from "./Collapsible.jsx";
+import Legalities from "./Legalities.jsx";
 import { isNonCard, oracleId } from "../utils/cards";
 import { getPrints, getRulings } from "../utils/scryfall";
 
-const FORMAT_NAMES = {
-  paupercommander: "Pauper Commander", standardbrawl: "Standard Brawl",
-  oldschool: "Old School", predh: "Pre-DH", premodern: "Premodern",
-};
-const formatName = (f) => FORMAT_NAMES[f] ?? f.charAt(0).toUpperCase() + f.slice(1);
-const STATUS = { legal: "Legal", not_legal: "Not legal", banned: "Banned", restricted: "Restricted" };
 const cap = (s) => s.charAt(0).toUpperCase() + s.slice(1);
 
 // Short notes shown beside each printing: year plus any notable treatment
@@ -163,16 +158,7 @@ export default function CardDetail({ card }) {
 
         {!isNonCard(card) && (
           <>
-          <Collapsible overlay className="overlayPanel" summary="Format legalities">
-            <ul className="legalities">
-              {Object.entries(card.legalities).map(([format, status]) => (
-                <li key={format}>
-                  <span>{formatName(format)}</span>
-                  <span className={`badge ${status}`}>{STATUS[status] ?? status}</span>
-                </li>
-              ))}
-            </ul>
-          </Collapsible>
+          <Legalities legalities={card.legalities} />
 
           {rulings?.length > 0 && (
             <Collapsible overlay className="overlayPanel" summary={`Rulings (${rulings.length})`}>
