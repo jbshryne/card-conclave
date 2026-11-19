@@ -8,6 +8,9 @@ import { getPrints, getRulings } from "../utils/scryfall";
 
 const cap = (s) => s.charAt(0).toUpperCase() + s.slice(1);
 
+// Printings that share artwork share an illustration id (one per face on multi-faced cards)
+const artKey = (p) => p.illustration_id ?? p.card_faces?.map((f) => f.illustration_id).filter(Boolean).join("+");
+
 // Short notes shown beside each printing: year plus any notable treatment
 const printNotes = (p) =>
   [
@@ -45,6 +48,7 @@ function FlavorText({ text }) {
 export default function CardDetail({ card }) {
   const [rulings, setRulings] = useState(null);
   const [prints, setPrints] = useState(null);
+  const [uniqueArt, setUniqueArt] = useState(false);
 
   useEffect(() => {
     document.title = `${card.name} – Chancery Archives`;
@@ -76,6 +80,16 @@ export default function CardDetail({ card }) {
     };
   }, [card.id]);
   const otherPrints = prints?.filter((p) => p.id !== card.id) ?? [];
+  // "Unique artwork only": drop printings that reuse this card's art or art already listed
+  const seenArt = new Set([artKey(card)]);
+  const shownPrints = uniqueArt
+    ? otherPrints.filter((p) => {
+        const key = artKey(p);
+        if (!key || seenArt.has(key)) return false;
+        seenArt.add(key);
+        return true;
+      })
+    : otherPrints;
 
   const images = card.image_uris
     ? [card.image_uris.normal]
@@ -123,7 +137,13 @@ export default function CardDetail({ card }) {
         </dl>
 
         {otherPrints.length > 0 && (
-          <Collapsible overlay className="overlayPanel" summary={`Other printings (${otherPrints.length})`}>
+          <Collapsible overlay className="overlayPanel" summary={`Other printings (${shownPrints.length})`}>
+            <label className="uniqueToggle">
+              <input type="checkbox" checked={uniqueArt} onChange={(e) => setUniqueArt(e.target.checked)} /> Unique artwork only
+            </label>
+            {uniqueArt && shownPrints.length === 0 && (
+              <p className="muted">Every other printing uses this card’s artwork.</p>
+            )}
             <ul className="printList">
               <li className="viewAll">
                 <Link
@@ -135,14 +155,15 @@ export default function CardDetail({ card }) {
                       sort: "released",
                       dir: "desc",
                       label: card.name,
+                      ...(uniqueArt ? { uniqueart: "1" } : {}),
                     })}`,
                   }}
                 >
-                  <span>View all printings</span>
-                  <span className="meta">{prints.length}</span>
+                  <span>{uniqueArt ? "View all unique artwork" : "View all printings"}</span>
+                  <span className="meta">{uniqueArt ? shownPrints.length + 1 : prints.length}</span>
                 </Link>
               </li>
-              {otherPrints.map((p) => (
+              {shownPrints.map((p) => (
                 <li key={p.id}>
                   <Link to={`/card/${p.id}`}>
                     <span>

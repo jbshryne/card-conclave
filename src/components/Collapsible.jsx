@@ -4,7 +4,7 @@ import { useEffect, useRef } from "react";
 // whose body slides open and shut instead of snapping.
 // overlay: the body floats over the content below (instead of pushing it down) and
 // closes on Escape or a click outside, like a dropdown.
-export default function Collapsible({ summary, children, className, overlay = false }) {
+export default function Collapsible({ summary, children, className, style, overlay = false }) {
   const detailsRef = useRef(null);
   const bodyRef = useRef(null);
   const animRef = useRef(null);
@@ -68,7 +68,7 @@ export default function Collapsible({ summary, children, className, overlay = fa
   }, [overlay]);
 
   return (
-    <details ref={detailsRef} className={className}>
+    <details ref={detailsRef} className={className} style={style}>
       <summary onClick={toggle}>{summary}</summary>
       <div className="collapsibleBody" ref={bodyRef}>
         {children}

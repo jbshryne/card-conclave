@@ -3,6 +3,7 @@ import ListField from "./ListField.jsx";
 import StatField from "./StatField.jsx";
 import Collapsible from "./Collapsible.jsx";
 import { useHiddenSet } from "../utils/useHiddenSet";
+import { useBelowHeader } from "../utils/useBelowHeader";
 import { normalizeStatValue } from "../utils/stats";
 import { allSets, catalog } from "../utils/scryfall";
 import { loadTags, searchTags, randomTag } from "../utils/tags";
@@ -82,6 +83,7 @@ export default function SearchForm({
   const [stats, setStats] = useState(initial.stats ?? []);
   const [statDraft, setStatDraft] = useState({ stat: "mv", op: "=", value: "" }); // the stat row's inputs
   const [statError, setStatError] = useState("");
+  const dockTop = useBelowHeader(); // keeps the options square under the site header
   const [hiddenFields, toggleField, showAllFields, hideAllFields] = useHiddenSet("cardConclaveHiddenFields");
   const [pending, setPending] = useState(emptyPending); // text typed in a box but not yet added as a chip
   const [typeNames, setTypeNames] = useState([]);
@@ -278,6 +280,7 @@ export default function SearchForm({
       <Collapsible
         overlay
         className="customizeDock"
+        style={dockTop == null ? undefined : { "--dock-top": `${dockTop}px` }}
         summary={
           <>
             <span className="dockIcon" title="Customize fields" aria-hidden="true" />

@@ -33,7 +33,12 @@ export default function ResultsPage() {
   // "All printings of <card>" links carry oracle=<id>&prints=1&label=<name> instead of form fields
   const extra = useMemo(() => {
     const p = new URLSearchParams(searchKey);
-    return { oracle: p.get("oracle"), prints: p.get("prints") === "1", label: p.get("label") };
+    return {
+      oracle: p.get("oracle"),
+      prints: p.get("prints") === "1",
+      art: p.get("uniqueart") === "1", // named "uniqueart" because "art" is the Art / Concept tag field's parameter
+      label: p.get("label"),
+    };
   }, [searchKey]);
 
   const [result, setResult] = useState(() => resultsCache.get(searchKey) ?? null); // { cards, total }
@@ -72,7 +77,7 @@ export default function ResultsPage() {
         if (!cancelled) setProgress(`Loaded ${n} of ${t} cards…`);
       },
       MAX_CARDS,
-      extra.prints ? "prints" : "cards",
+      extra.prints ? (extra.art ? "art" : "prints") : "cards", // "art" = one printing per unique artwork
       typeSort ? "asc" : search.dir
     )
       .then((cards) => {
@@ -121,7 +126,7 @@ export default function ResultsPage() {
         {cards && (
           <span>
             {extra.oracle
-              ? `All printings of ${extra.label ?? "this card"} (${cards.length.toLocaleString()})`
+              ? `${extra.art ? "Unique artwork for" : "All printings of"} ${extra.label ?? "this card"} (${cards.length.toLocaleString()})`
               : result.total > cards.length
               ? `First ${cards.length.toLocaleString()} of ${result.total.toLocaleString()} cards`
               : `${cards.length.toLocaleString()} cards`}
@@ -160,6 +165,16 @@ export default function ResultsPage() {
             ))}
           </select>
         </label>
+        {extra.oracle && (
+          <label>
+            <input
+              type="checkbox"
+              checked={extra.art}
+              onChange={(e) => change({ uniqueart: e.target.checked ? "1" : null, page: null })}
+            />{" "}
+            Unique artwork only
+          </label>
+        )}
         <SizeControl value={sizeKey} onChange={setSizeKey} sizes={SIZES} />
       </div>
 

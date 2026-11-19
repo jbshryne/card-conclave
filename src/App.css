@@ -1097,7 +1097,7 @@ select {
 
 /* ---- "Customize fields": a square docked top right that opens into a panel ---- */
 .srOnly { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
-.customizeDock { position: fixed; top: 1rem; right: 1rem; z-index: 40; }
+.customizeDock { position: fixed; top: var(--dock-top, 1rem); right: 1rem; z-index: 40; }
 .customizeDock summary {
   list-style: none;
   display: grid;
@@ -1135,7 +1135,7 @@ select {
   top: calc(100% + 6px);
   right: 0;
   width: min(21rem, calc(100vw - 1.5rem));
-  max-height: calc(100vh - 5.5rem);
+  max-height: calc(100vh - var(--dock-top, 1rem) - 4.5rem); /* stays on screen however far down the dock sits */
   overflow-y: auto;
   padding: 0.8rem 1rem;
   background: rgb(18, 24, 42);
@@ -1146,6 +1146,11 @@ select {
   text-align: left;
 }
 .dockTitle { margin: 0; padding-bottom: 0.4rem; border-bottom: 1px solid var(--gold-faint); font: 600 0.95rem var(--formal); letter-spacing: 0.08em; text-transform: uppercase; color: var(--silver); }
-@media (max-width: 640px) { .customizeDock { top: 0.5rem; right: 0.5rem; } }
+@media (max-width: 640px) { .customizeDock { right: 0.5rem; } }
 
 .dockTools { justify-content: space-between; margin: 0; }
+
+.uniqueToggle { display: flex; align-items: center; gap: 0.5rem; margin: 0 0 0.6rem; font-weight: normal; }
+
+/* on narrower screens the docked square sits over the page's top right, so leave it a row of its own */
+@media (max-width: 1000px) { #mainContent { padding-top: 4rem; } }
